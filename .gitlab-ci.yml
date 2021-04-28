@@ -111,7 +111,7 @@ paris-cl-ecosistema-compra-dev:
   variables:
     ENVIRONMENT: dev
     REGISTRY_AUTH_NAME: gitlab-auth-${CI_PROJECT_NAME}
-    CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-purchase-svc"
+    CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-sync-svc"
     IMG_TAG: ${CI_COMMIT_REF_NAME}-${CI_PIPELINE_IID}-${CI_COMMIT_SHORT_SHA}
     SECRET_NAME: ${CI_PROJECT_NAME}-secrets
     NAMESPACE: paris-cl-ecosistema-compra
@@ -136,7 +136,7 @@ paris-cl-ecosistema-compra-prod:
   variables:
     ENVIRONMENT: production
     REGISTRY_AUTH_NAME: gitlab-auth-${CI_PROJECT_NAME}
-    CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-purchase-svc"
+    CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-sync-svc"
     IMG_TAG: ${CI_COMMIT_REF_NAME}-${CI_PIPELINE_IID}-${CI_COMMIT_SHORT_SHA}
     SECRET_NAME: ${CI_PROJECT_NAME}-secrets
     NAMESPACE: paris-cl-ecosistema-compra
