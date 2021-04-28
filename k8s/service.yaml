@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: <SERVICE_NAME>-svc
+  labels:
+    area: txd
+    app: <SERVICE_NAME>
+    role: API
+    version: "1"
+    name: <SERVICE_NAME>
+spec:
+  ports:
+    - name: http
+      port: 5005
+      targetPort: 5005
+  selector:
+    name: <SERVICE_NAME>

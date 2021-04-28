@@ -1,0 +1,15 @@
+export enum Status {
+    InitiatePurchase = 1,
+    StylesSelectedPurchase = 2,
+    StyleStoreSelectedPurchase = 3,
+    StylesUnitsPurchase = 4,
+    StylesDetailsPurchase = 5,
+    StylesOptionalsDetailsPurchase = 6,
+    CompletePurchase = 7,
+    Approvement = 8,
+    PendingNegotiation = 9,
+    Cotizations = 10,
+    InNegotiation = 11,
+    ProductDetails = 12,
+    CommercialDetails = 13,
+}

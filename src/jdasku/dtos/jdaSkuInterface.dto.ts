@@ -1,0 +1,32 @@
+export class JdaSkuInterface {
+    indicadorSkuEstilo: number;
+    proveedor: number;
+    departamento: number;
+    subDepartamento: number;
+    clase: number;
+    partProveedor: string;
+    costo: number;
+    precio: number;
+    unidadEmpaque: number;
+    unidadMedida: number;
+    metodoDistribucion: number;
+    comprador: number;
+    linea: string;
+    ean13: string;
+    codigoManejo: string;
+    marca: string;
+    temporada: string;
+    perfil: string;
+    pais: string;
+    coleccion: string;
+    tamano: string;
+    descripcion: string;
+    descripcionBoleta: string;
+    descripcionEtiqueta: string;
+    descripcionCorta: string;
+    colores: string;
+    tallas: string;
+    dimension: string;
+    atc: string;
+    ratio: string;
+}

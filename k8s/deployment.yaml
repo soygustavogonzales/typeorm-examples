@@ -1,0 +1,88 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: <SERVICE_NAME>-deployment
+spec:
+  replicas: <REPLICA_NUMBER>
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: <SERVICE_NAME>
+        area: txd
+        app: <SERVICE_NAME>
+        version: "1"
+    spec:
+      nodeSelector:
+        node-role.kubernetes.io/user: "true"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: failure-domain.beta.kubernetes.io/zone
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+              weight: 100
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "high"
+          effect: "NoSchedule"
+      imagePullSecrets:
+      - name: <REGISTRY_AUTH_NAME>  # cencoreg | gitlab-auth-ecom-purchase-svc
+      containers:
+      - name: ecom-sync-svc
+        image: <IMAGE_URL>:<IMAGE_TAG>
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 1000m
+            memory: 1.5Gi
+        ports:
+        - name: http
+          containerPort: 5005
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /ecom/sync/api/v1/health
+            port: 5005
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /ecom/sync/api/v1/health
+            port: 5005
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
+          periodSeconds: 30
+        # volumeMounts:
+        # - name: varlog
+        #   mountPath: /var/logs
+        envFrom:
+          - secretRef:
+              name: <SERVICE_NAME>-secrets
+          - configMapRef:
+              name: <SERVICE_NAME>-configmap
+    #   - name: fdlogger
+    #     image: <FDLOGGER_IMG_URL>:<FDLOGGER_IMG_TAG>
+    #     resources:
+    #       limits:
+    #         cpu: "500m"
+    #         memory: "750Mi"
+    #       requests:
+    #         cpu: "250m"
+    #         memory: "500Mi"
+    #     env:
+    #       - name: APP_ENVIRONMENT
+    #         value: <ENVIRONMENT>
+    #     volumeMounts:
+    #     - name: varlog
+    #       mountPath: /var/logs
+    #   volumes:
+    #   - name: varlog
+    #     emptyDir: {}
