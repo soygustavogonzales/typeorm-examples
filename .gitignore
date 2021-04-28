@@ -1,0 +1,45 @@
+# compiled output
+/dist
+/node_modules
+
+# sonar
+/.scannerwork
+
+# ormconfig
+ormconfig.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.env
+report.20200908.161228.61744.0.001.json
+.vs/ecom-purchase-svc/v16/.suo
+.vs/slnx.sqlite
+.vs/VSWorkspaceState.json
