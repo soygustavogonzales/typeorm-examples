@@ -13,6 +13,28 @@ import { JwtModule } from '@nestjs/jwt';
 import { JdaSkuSyncConsumerService } from './jdasku/events/sqs-synchronize-sku-consumer.service';
 import { JdaskusyncService } from './jdasku/service/jdaskusync.service';
 import { JdaOcModule } from './jdaoc/jdaoc.module';
+import { SizeModule } from './size/size.module';
+import { StoreModule } from './store/store.module';
+import { ProviderModule } from './provider/provider.module';
+import { OriginModule } from './origin/origin.module';
+import { PurchaseModule } from './purchase/purchase.module';
+import { SeasonStickerModule } from './season-sticker/season-sticker.module';
+import { PackagingModule } from './packaging/packaging.module';
+import { CategoryModule } from './category/category.module';
+import { PurchaseStyleModule } from './purchase-style/purchase-style.module';
+import { RseModule } from './rse/rse.module';
+import { SegmentModule } from './segment/segment.module';
+import { ShipmethodModule } from './shipmethod/shipmethod.module';
+import { RatioModule } from './ratio/ratio.module';
+import { DesignerModule } from './designer/designer.module';
+import { StatusModule } from './status/status.module';
+import { ShippingDatesModule } from './shipping-dates/shipping-dates.module';
+import { MaintainerModule } from './maintainer/maintainer.module';
+import { CsoModule } from './cso/cso.module';
+import { ExitportsModule } from './exitports/exitports.module';
+import { ReportModule } from './report/report.module';
+import { PaymentTermsModule } from './payment-terms/payment-terms.module';
+import { NewReportModule } from './report/new-report.module';
 
 @Module({
   imports: [
@@ -48,6 +70,32 @@ import { JdaOcModule } from './jdaoc/jdaoc.module';
     JdaskuModule,
     SharedModule,
     JdaOcModule,
+    StoreModule,
+    ProviderModule,
+    OriginModule,
+    PurchaseModule,
+    SeasonStickerModule,
+    PackagingModule,
+    SizeModule,
+    CategoryModule,
+    PurchaseStyleModule,
+    RseModule,
+    SegmentModule,
+    ShipmethodModule,
+    RatioModule,
+    DesignerModule,
+    StatusModule,
+    ShippingDatesModule,
+    ExternalServicesModule,
+    MaintainerModule,
+    CsoModule,
+    ExitportsModule,
+    ReportModule,
+    JdaskuModule,
+    SharedModule,
+    PaymentTermsModule,
+    JdaOcModule,
+    NewReportModule,
   ],
   controllers: [HealthController],
   providers: [JwtStrategy, ApiKeyStrategy, JdaskusyncService, JdaSkuSyncConsumerService],
