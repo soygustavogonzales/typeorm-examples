@@ -43,7 +43,7 @@ export class PurchaseController {
     @UsePipes(ValidationPipe)
     async post(@Body() purchaseDto: CreatePurchaseDto): Promise<PurchaseDto> {
         const response = await this.purchaseService.create(purchaseDto);
-        // this.logger.log('Compra creada ' + response);
+        // this.logger.log('Compra creada ' + response); 
         return response;
     }
 
