@@ -153,7 +153,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                             unitsPerInner: styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b), // calculate by ratio,
                             innerPerMaster: styleData.divisionMaster, // calculate by ratio,
                             cbm: Number(cbm),
-                            totalCbm: styleData.cbm * color.getTotalUnits(),
+                            totalCbm: styleData.cbm * shipping.units,
                             dimension: styleData.dimension,
                             rse: styleDetails.rse?.name || '',
                             composition: styleDetails.composition || '',
@@ -165,12 +165,12 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                             // totalQty: color.getTotalUnits(),
                             firstDelivery: firsDeliveryDate ? moment(firsDeliveryDate).format('DD-MMM-yyyy') : '', // check
                             fob: styleDetails.fob *(1/1),
-                            totalFob: color.getTotalUnits() * styleDetails.fob,
+                            totalFob: shipping.units * styleDetails.fob,
                             dollarBought: styleDetails.dollarChange*(1/1) || 0,
                             importFactor: styleDetails.importFactor * 1 || 0,
                             cost: (styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) || 0,
-                            totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * color.getTotalUnits())*(1/1) || 0, // TODO: Pending
-                            totalRetail: (styleDetails.price * color.getTotalUnits())*(1/1), // TODO: Pending
+                            totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * shipping.units * 1.0) || 0, // TODO: Pending
+                            totalRetail: (styleDetails.price * shipping.units) * 1.0, // TODO: Pending
                             brandManager,
                             productManager,
                             designer,
