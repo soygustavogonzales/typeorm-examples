@@ -877,7 +877,7 @@ export class ReportService {
                         rowData.color_name = colorData.colorName;
 
                         rowData.qtyTotalXMaster = Math.round(currentShipping?.units / rowData.qtyXInner * rowData.qtyXMaster);
-                        rowData.cbm = styleData.classTypeCbm ? styleData.classTypeCbm * rowData.qtyXMaster * rowData.qtyXInner : 0; // TODO: Pending
+                        rowData.cbm = styleData.cbm ? styleData.cbm * rowData.qtyXMaster * rowData.qtyXInner : 0; // TODO: Pending
                         // _.range(1, 11).forEach(index => {
                         //     rowData[`size${index}`] = '';
                         // });
