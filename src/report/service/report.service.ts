@@ -875,26 +875,17 @@ export class ReportService {
                         rowData.qtyXInner = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b); // calculate by ratio,
                         rowData.qtyXMaster = styleData.divisionMaster;
                         rowData.color_name = colorData.colorName;
-
-                        rowData.qtyTotalXMaster = Math.round(currentShipping?.units / rowData.qtyXInner * rowData.qtyXMaster);
-                        rowData.cbm = styleData.cbm ? styleData.cbm * rowData.qtyXMaster * rowData.qtyXInner : 0; // TODO: Pending
-                        // _.range(1, 11).forEach(index => {
-                        //     rowData[`size${index}`] = '';
-                        // });
-
                         rowData.orderQtys = 0;
                         _.forEach(ratio, (r, k) => {
                             rowData[`size${k + 1}`] = Math.round((currentShipping.units * r) / rowData.qtyXInner);
                             rowData.orderQtys += rowData[`size${k + 1}`];
                         });
-
-                        // for (let i = 1; i < 11; i++) {
-                        //     rowData.orderQtys += rowData[`size${i}`];
-                        // }
-                        sheetTotal += rowData.orderQtys;
+                        rowData.qtyTotalXMaster = Math.round(rowData.orderQtys / (rowData.qtyXInner * rowData.qtyXMaster));
+                        rowData.cbm = styleData.cbm ? styleData.cbm * rowData.qtyXMaster * rowData.qtyXInner : 0;
                         rowData.total_cbm = rowData.cbm !== 0 ? rowData.cbm * rowData.qtyTotalXMaster : 0;
                         rowData.fobValue = `USD ${parseFloat(styleDetails.fob.toString())?.toFixed(2).replace('.', ',') || 'No Ingresado'}`;
                         rowData.total_fob = styleDetails.fob ? parseFloat((rowData.orderQtys * styleDetails.fob).toFixed(2)) : 'No ingresado';
+                        sheetTotal += rowData.orderQtys;
 
                         sheetStyles.push({
                             range: {
