@@ -197,5 +197,10 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
 
             });
         }));
+
+        this.dataToExport = this.dataToExport.filter(row => !((row.unit === 'PARIS E-COMMERCE' || row.unit === 'TIENDAS PROPIAS') && row.size === 'SURT'));
+        this.dataToExport = this.dataToExport.filter(row => !(row.unit === 'PARIS' && row.atcId != '' && row.size === 'SURT'));
+        this.dataToExport = this.dataToExport.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size !== 'SURT' && row.size !== 'TU' && row.packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && row.packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')));
+        this.dataToExport = this.dataToExport.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size === 'SURT' && (row.packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || row.packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7'))));
     }
 }
