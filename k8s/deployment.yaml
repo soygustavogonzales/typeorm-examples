@@ -10,7 +10,7 @@ metadata:
   name: <SERVICE_NAME>-deployment
 spec:
   progressDeadlineSeconds: 2147483647
-  replicas: <REPLICA_NUMBER>
+  replicas: 3
   revisionHistoryLimit: 2147483647
   selector:
     matchLabels:
