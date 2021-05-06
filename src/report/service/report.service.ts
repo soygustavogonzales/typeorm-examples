@@ -131,42 +131,52 @@ export class ReportService {
                 const skuColor = sku?.skuColor.find(skuColor => skuColor.styleColorId === colorData.id);
                 if (styleData && styleDetails && colorData && skuColor) {
                     for (const colorSize of skuColor.skuColorSize) {
-                        for (const shipping of color.shippings) {
-                            const unitsPerInner = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b);
-                            const totalQty = (shipping.units/unitsPerInner)*colorSize.ratio;
-                            dataToExportSku.push({
-                                department: styleData.departmentCode,
-                                styleCode: styleData.code,
-                                ean: colorSize.ean,
-                                sku: colorSize.sku,
-                                description: `${styleData.code} ${styleData.articleType}`,
-                                color: colorData.colorShortName,
-                                size: colorSize.sizeJda?.shortName || 'N/A',
-                                totalQty: totalQty,
-                                price: styleDetails.price,
-                                sato: styleDetails.sato,
-                                piNumber: shipping.piName,
-                                atcId: (purchaseStyle.purchaseStore.store.shortName !== 'PW' && 
-                                        purchaseStyle.purchaseStore.store.shortName !== 'TP') ? colorSize.atc : '',
-                                ratio: colorSize.ratio,
-                                provider: styleDetails.provider.name,
-                                lsd: moment(shipping.date).format('DD-MMM-yyyy'),
-                                unit: purchaseStyle.purchaseStore.store.name,
-                                skuSyncDate: colorSize.datejda,
-                                ocJda: shipping['oc'].map(oc => oc.ponumb).join('/'),
-                                impNum: shipping['oc'][0] ? `${purchaseStyle.purchaseStore.store.impnumpfx}${shipping['oc'][0].poedat.toString().substring(0, 4)}${shipping['oc'][0].ponumb}` : null,
-                            });
+
+                        const size = colorSize.sizeJda?.shortName || 'N/A';
+                        const atcId = (purchaseStyle.purchaseStore.store.shortName !== 'PW' && purchaseStyle.purchaseStore.store.shortName !== 'TP') ? colorSize.atc : '';
+                        const unit = purchaseStyle.purchaseStore.store.name;
+                        const packingMethod = styleDetails.packingMethod.name;
+
+                        if (!((unit === 'PARIS E-COMMERCE' || unit === 'TIENDAS PROPIAS') && size === 'SURT') &&
+                            !(unit === 'PARIS' && atcId != '' && size === 'SURT') &&
+                            !(unit === 'PARIS' && atcId == '' && (size !== 'SURT' && size !== 'TU' && packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')) &&
+                            !(unit === 'PARIS' && atcId == '' && (size === 'SURT' && (packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7')))) {
+                              
+                            for (const shipping of color.shippings) {
+                                const unitsPerInner = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b);
+                                const totalQty = (shipping.units / unitsPerInner) * colorSize.ratio;
+                                dataToExportSku.push({
+                                    department: styleData.departmentCode,
+                                    styleCode: styleData.code,
+                                    ean: colorSize.ean,
+                                    sku: colorSize.sku,
+                                    description: `${styleData.code} ${styleData.articleType}`,
+                                    color: colorData.colorShortName,
+                                    size,
+                                    totalQty: totalQty,
+                                    price: styleDetails.price,
+                                    sato: styleDetails.sato,
+                                    piNumber: shipping.piName,
+                                    atcId,
+                                    ratio: colorSize.ratio,
+                                    provider: styleDetails.provider.name,
+                                    lsd: moment(shipping.date).format('DD-MMM-yyyy'),
+                                    unit,
+                                    skuSyncDate: colorSize.datejda,
+                                    ocJda: shipping['oc'].map(oc => oc.ponumb).join('/'),
+                                    impNum: shipping['oc'][0] ? `${purchaseStyle.purchaseStore.store.impnumpfx}${shipping['oc'][0].poedat.toString().substring(0, 4)}${shipping['oc'][0].ponumb}` : null,
+                                });
+                            }
                         }
                     }
                 }
-
             });
         }));
 
-        dataToExportSku = dataToExportSku.filter(row => !((row.unit === 'PARIS E-COMMERCE' || row.unit === 'TIENDAS PROPIAS') && row.size === 'SURT'));
-        dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId != '' && row.size === 'SURT'));
-        dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size !== 'SURT' && row.size !== 'TU' && row.packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && row.packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')));
-        dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size === 'SURT' && (row.packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || row.packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7'))));
+        // dataToExportSku = dataToExportSku.filter(row => !((row.unit === 'PARIS E-COMMERCE' || row.unit === 'TIENDAS PROPIAS') && row.size === 'SURT'));
+        // dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId != '' && row.size === 'SURT'));
+        // dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size !== 'SURT' && row.size !== 'TU' && row.packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && row.packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')));
+        // dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size === 'SURT' && (row.packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || row.packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7'))));
 
         /* make the worksheet */
         const ws = XLSX.utils.json_to_sheet([headersSku, ...dataToExportSku], { skipHeader: true });

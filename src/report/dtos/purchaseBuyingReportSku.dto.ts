@@ -1,7 +1,5 @@
 import { PurchaseBuyingReport } from './purchaseBuyingReport.dto';
 import * as _ from 'lodash';
-import { NotificationTypeEnum } from '../../shared/enums/notificationType.enum';
-import { NotificationPublisherService } from '../../external-services/events/notification-publisher.service';
 import moment = require('moment');
 
 export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
