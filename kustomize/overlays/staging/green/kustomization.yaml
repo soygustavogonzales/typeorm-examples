@@ -27,3 +27,13 @@ configMapGenerator:
   - name: ecom-sync-svc-configmap
     files:
       - ../config.properties
+
+patchesJson6902:
+- patch: |-
+    - op: replace
+      path: /data/NEW_RELIC_APP_NAME
+      value: "green-ecom-sync-svc Development"
+  target:
+    kind: ConfigMap
+    name: ecom-sync-svc-configmap
+    version: v1
