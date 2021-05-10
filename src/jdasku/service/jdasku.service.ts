@@ -165,7 +165,7 @@ export class JdaskuService {
                             const sizesOk = color.skuColorSize.filter(size => size.sku).length;
                             return (sizes === sizesOk) ? 1 : 0;
                         });
-                        if (colors === colorsOk.reduce((prev, curr) => prev + curr)) {
+                        if (colors === colorsOk.reduce((prev, curr) => prev + curr, 0)) {
                             groupedStyles[groupData].stylesWSku.push(styleData.id);
                         }
                     }
