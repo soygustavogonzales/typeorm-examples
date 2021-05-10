@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: <SERVICE_NAME>
+    area: txd
+    name: <SERVICE_NAME>
+    version: "1"
+  name: <SERVICE_NAME>-deployment
+spec:
+  progressDeadlineSeconds: 2147483647
+  replicas: 3
+  revisionHistoryLimit: 2147483647
+  selector:
+    matchLabels:
+      app: <SERVICE_NAME>
+      area: txd
+      name: <SERVICE_NAME>
+      version: "1"
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: <SERVICE_NAME>
+        area: txd
+        name: <SERVICE_NAME>
+        version: "1"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: failure-domain.beta.kubernetes.io/zone
+      containers:
+      - envFrom:
+        - secretRef:
+            name: <SERVICE_NAME>-secrets
+        - configMapRef:
+            name: <SERVICE_NAME>-configmap
+        image: <IMAGE_URL>:<IMAGE_TAG>
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ecom/sync/api/v1/health
+            port: 5005
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 10
+        name: ecom-sync-svc
+        ports:
+        - containerPort: 5005
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ecom/sync/api/v1/health
+            port: 5005
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 10
+        resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
+          requests:
+            cpu: "1"
+            memory: 1536Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: <REGISTRY_AUTH_NAME>
+      nodeSelector:
+        node-role.kubernetes.io/user: "true"
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: dedicated
+        operator: Equal
+        value: high
+status: {}

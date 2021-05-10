@@ -1,0 +1,29 @@
+# kustomize build --load_restrictor none
+apiVersion: kustomize.config.k8s.io/v1beta1 # apiVersion de kustomize
+kind: Kustomization # Especificamos que es una kustomization
+
+resources: # Especificamos los recursos que vamos a re-utilizar
+  - ../../../base
+
+commonLabels: # commonLabels añade todas etiquetas a todos los recursos definidos en `resources` y los utiliza como selectores
+  app.paristech.io/cluster-name: green
+  app.paristech.io/component: ecom-sync
+  app.paristech.io/environment: staging
+  app.paristech.io/instance: ecom-sync-svc
+  app.paristech.io/managed-by: argocd
+  app.paristech.io/name: ecom-sync
+  app.paristech.io/part-of: paris-cl-ecosistema-compra
+
+generatorOptions: # docs: https://kubectl.docs.kubernetes.io/references/kustomize/generatoroptions/
+  disableNameSuffixHash: true # Por defecto genera un hash para cada objeto el cual es complejo de manejar posteriormente, por eso prefiero deshabilitar este comportamiento
+
+commonAnnotations: # Añade anotaciones nuestros recursos con el objetivo de identificar el equipo responsable.
+  team.paristech.io/developer: gonzalo-leyton
+  team.paristech.io/owner: gonzalo-leyton
+  team.paristech.io/product-name: paris-cl-ecosistema-compra
+  team.paristech.io/source-repo-url: https://gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
+
+configMapGenerator:
+  - name: ecom-sync-svc-configmap
+    files:
+      - ../config.properties
