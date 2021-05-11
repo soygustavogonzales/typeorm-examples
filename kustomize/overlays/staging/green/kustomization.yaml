@@ -18,13 +18,14 @@ generatorOptions: # docs: https://kubectl.docs.kubernetes.io/references/kustomiz
   disableNameSuffixHash: true # Por defecto genera un hash para cada objeto el cual es complejo de manejar posteriormente, por eso prefiero deshabilitar este comportamiento
 
 commonAnnotations: # Añade anotaciones nuestros recursos con el objetivo de identificar el equipo responsable.
-  team.paristech.io/developer: gonzalo-leyton
-  team.paristech.io/owner: gonzalo-leyton
+  team.paristech.io/developer: sebastian-matusdelaparra
+  team.paristech.io/owner: sebastian-matusdelaparra
   team.paristech.io/product-name: paris-cl-ecosistema-compra
   team.paristech.io/source-repo-url: https://gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
 
 configMapGenerator:
   - name: ecom-sync-svc-configmap
+    behavior: merge
     files:
       - ../config.properties
 

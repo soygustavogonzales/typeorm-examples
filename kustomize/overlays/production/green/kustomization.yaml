@@ -26,6 +26,7 @@ commonAnnotations: # Añade anotaciones nuestros recursos con el objetivo de ide
 
 configMapGenerator:
   - name: ecom-sync-svc-configmap
+    behavior: merge
     files:
       - ../config.properties
 

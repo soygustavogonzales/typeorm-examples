@@ -39,7 +39,7 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 100
           requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: failure-domain.beta.kubernetes.io/zone
+          - topologyKey: topology.kubernetes.io/zone
       containers:
       - envFrom:
         - secretRef:
@@ -86,7 +86,7 @@ spec:
       imagePullSecrets:
       - name: <REGISTRY_AUTH_NAME>
       nodeSelector:
-        node-role.kubernetes.io/user: "true"
+        node.kubernetes.io/role: "user"
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
