@@ -104,7 +104,7 @@ dockerize:
         --from-literal=AWS_QUEUE_SQS_JDA_SKU_SYNC_URL=$AWS_QUEUE_SQS_JDA_SKU_SYNC_URL \
         -o yaml --dry-run=client > /tmp/$CI_PROJECT_NAME-secrets.yaml
     # Encriptamos secreto adicional
-    - kubeseal --cert ${KUBESEAL_ENDPOINT} < /tmp/$CI_PROJECT_NAME-secret.yaml > $CI_PROJECT_NAME-secret.yaml -o yaml
+    - kubeseal --cert ${KUBESEAL_ENDPOINT} < /tmp/$CI_PROJECT_NAME-secrets.yaml > $CI_PROJECT_NAME-secret.yaml -o yaml
     # Añadimos recursos a kustomize
     - kustomize edit add resource $CI_PROJECT_NAME-secret.yaml
     # Volvemos al directorio superior y subimos los cambios.
