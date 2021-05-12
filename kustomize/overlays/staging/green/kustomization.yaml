@@ -1,11 +1,13 @@
 # kustomize build --load_restrictor none
-apiVersion: kustomize.config.k8s.io/v1beta1 # apiVersion de kustomize
-kind: Kustomization # Especificamos que es una kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 
-resources: # Especificamos los recursos que vamos a re-utilizar
-  - ../../../base
+resources:
+- ../../../base
+- docker-pull-secrets.yaml
+- ecom-sync-svc-secret.yaml
 
-commonLabels: # commonLabels añade todas etiquetas a todos los recursos definidos en `resources` y los utiliza como selectores
+commonLabels:
   app.paristech.io/cluster-name: green
   app.paristech.io/component: ecom-sync
   app.paristech.io/environment: staging
@@ -14,20 +16,20 @@ commonLabels: # commonLabels añade todas etiquetas a todos los recursos definid
   app.paristech.io/name: ecom-sync
   app.paristech.io/part-of: paris-cl-ecosistema-compra
 
-generatorOptions: # docs: https://kubectl.docs.kubernetes.io/references/kustomize/generatoroptions/
-  disableNameSuffixHash: true # Por defecto genera un hash para cada objeto el cual es complejo de manejar posteriormente, por eso prefiero deshabilitar este comportamiento
+generatorOptions:
+  disableNameSuffixHash: true
 
-commonAnnotations: # Añade anotaciones nuestros recursos con el objetivo de identificar el equipo responsable.
+commonAnnotations:
   team.paristech.io/developer: sebastian-matusdelaparra
   team.paristech.io/owner: sebastian-matusdelaparra
   team.paristech.io/product-name: paris-cl-ecosistema-compra
   team.paristech.io/source-repo-url: https://gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
 
 configMapGenerator:
-  - name: ecom-sync-svc-configmap
-    behavior: merge
-    files:
-      - ../config.properties
+- behavior: merge
+  files:
+  - ../config.properties
+  name: ecom-sync-svc-configmap
 
 patchesJson6902:
 - patch: |-
@@ -38,3 +40,6 @@ patchesJson6902:
     kind: ConfigMap
     name: ecom-sync-svc-configmap
     version: v1
+images:
+- name: registry.gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
+  newTag: k8s-migration-25-486c6eab
