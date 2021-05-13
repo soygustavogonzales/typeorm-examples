@@ -123,7 +123,7 @@ export class PurchaseStyleOrderRecapDto {
         this.brandManager = brandManager ? `${brandManager.firstName} ${brandManager.lastName}` : '',
         this.productManager = productManager ? `${productManager.firstName} ${productManager.lastName}` : '' ,
         this.designer = designer ? `${designer.firstName} ${designer.lastName}` : '' ,
-        this.piNumber = color.piName,
+        this.piNumber = shipping.piName,
         this.country = purchaseStyle.purchaseStore.store.destinyCountry.name,
         this.sticker = styleDetails.seasonSticker.name,
         this.internetDescription = styleDetails.internetDescription,
