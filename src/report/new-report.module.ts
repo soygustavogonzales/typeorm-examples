@@ -27,16 +27,19 @@ import { ImportFactorService } from '../maintainer/import-factor/service/import-
 import { NewReportController } from './new-report.controller';
 import { StatusPurchaseColor } from '../entities/statusPurchaseColor.entity';
 import { ShippingDatesChild } from '../entities/shippingDatesChild.entity';
+import { StoreService } from '../store/service/store.service';
+import { Store } from '../entities/store.entity';
 
 @Module({
   imports: [ExternalServicesModule, PurchaseModule, TypeOrmModule.forFeature(
     [
       PurchaseStyle, PurchaseStyleNegotiation, PurchaseStyleColor, PurchaseStyleColorShipping,
       PurchaseStyleDetails, ImportFactor, DollarChange, RequestReport, PaymentTerms, Provider, ExitPort,
-      StatusPurchaseColor, ShippingDatesChild,
+      StatusPurchaseColor, ShippingDatesChild, Store,
     ]), SharedModule, JdaskuModule],
   providers: [
-    ReportService, PurchaseStyleService, PaymentTermsService, DollarService, JdaskuService, ProviderService, ImportFactorService,
+    ReportService, PurchaseStyleService, PaymentTermsService, DollarService, JdaskuService, ProviderService,
+    ImportFactorService, StoreService,
   ],
   controllers: [NewReportController],
 })

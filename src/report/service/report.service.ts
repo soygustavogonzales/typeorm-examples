@@ -27,6 +27,7 @@ import { PurchaseBuyingReportEstilo } from '../dtos/purchaseBuyingReportEstilo.d
 import { PurchaseBuyingReport } from '../dtos/purchaseBuyingReport.dto';
 import { PurchaseBuyingReportSku } from '../dtos/purchaseBuyingReportSku.dto';
 import { PurchaseStyle } from '../../entities/purchaseStyle.entity';
+import { StoreService } from '../../store/service/store.service';
 @Injectable()
 export class ReportService {
     private logger = new Logger('ReportService');
@@ -49,6 +50,7 @@ export class ReportService {
         private notificationPublisherService: NotificationPublisherService,
         @InjectRepository(PurchaseStyle)
         private readonly purchaseStyleRepository: Repository<PurchaseStyle>,
+        private storeService: StoreService,
         ) {
         this.AWS_S3_BUCKET_NAME = this.config.get('aws').aws_s3_bucket_name;
         AWS.config.update({
@@ -1490,7 +1492,7 @@ export class ReportService {
                 styleId: p.styleId,
                 styleColorId: c.styleColorId,
                 userId: p.purchaseStore.purchase.userId,
-                localCode: p.purchaseStore.store.localCode,
+                store: p.purchaseStore.store,
                 // details: p.details[0],
                 ratio: p.details[0].ratio.ratio,
                 providerId: p.details[0].provider.id,
@@ -1514,6 +1516,8 @@ export class ReportService {
             const paymentTerms = await this.paymentTermsProxyService.getAll();
             const response = [];
     
+            const tpStore = await this.storeService.getByShortName('TP');
+            const brandJdaCodes = ['FOSTER','LEGACY','UMBRAL','UMBRBE','UWOMAN','JJO'];
             for (const piName of Object.keys(shippingsGrouped)) {
                 const stylesShippings = shippingsGrouped[piName];
                 const styleProviderNameReference = stylesShippings[0].providerName;
@@ -1542,13 +1546,18 @@ export class ReportService {
                         this.logger.debug(`styleId ${style.styleId} and providerId ${style.providerId} doesn't match with any SKU`, 'generatePurchaseOrder');
                     }
                     const skuColor = sku?.skuColor.find(color => color.styleColorId === style.styleColorId);
+
+                    let localCode = style.store.localCode;
+                    if (tpStore && tpStore.length > 0 && style.store.shortName === 'PW' && brandJdaCodes.filter(c => c === styleData.brandJdaCode).length > 0) {
+                        localCode = _.first(tpStore)?.localCode;
+                    }
                     if (skuColor) {
                         return skuColor.skuColorSize.map(skuColorSize => {
                             if (skuColorSize) {
                             const units = (totalUnits/sumRatio)*skuColorSize.ratio;
                             return {
                                 channel: 1,
-                                localCode: style.localCode,
+                                localCode,
                                 providerJdaCode: style.providerJdaCode,
                                 sku: skuColorSize.sku,
                                 ean: '',
