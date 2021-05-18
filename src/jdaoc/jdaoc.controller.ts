@@ -1,10 +1,14 @@
-import { Controller, Post, Param } from '@nestjs/common';
-import { ApiOkResponse } from '@nestjs/swagger';
+import { Controller, Post, Param, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ComposeGuard } from '../shared/guards/auth.guard';
 import { JdaOcSyncService } from './service/jdaocsync.service';
 
 @Controller('jdaoc')
+@ApiTags('JdaOc')
+@ApiBearerAuth()
+@ApiSecurity('api_key')
+@UseGuards(ComposeGuard)
 export class JdaocController {
-
     constructor(private jdaskusyncService: JdaOcSyncService){ }
 
     @Post('jdasync')

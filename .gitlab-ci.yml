@@ -1,3 +1,11 @@
+include:
+  - project: 'cencosud-ds/utils/gitops-deploy'
+    ref: master
+    file:
+      - '.gitlab-ci-deploy-script.yml'
+      - '.gitlab-ci-docker-definition.yml'
+      - '.gitlab-ci-kubernetes-runner.yml'
+
 image: registry.gitlab.com/cencosud-ds/utils/docker-images/node:12.19.0-alpine3.10
 
 cache:
@@ -44,7 +52,7 @@ dockerize:
   only:
     - branches
   script:
-    - export TAG="$CI_COMMIT_REF_NAME-$CI_PIPELINE_IID-$CI_COMMIT_SHORT_SHA"
+    - export TAG="$CI_COMMIT_REF_NAME"
     - export IMAGE_TAG="$CI_REGISTRY_IMAGE:$TAG"
     - echo $IMAGE_TAG
     - docker build --network host -t $IMAGE_TAG -f docker/Dockerfile .
@@ -84,7 +92,7 @@ dockerize:
       sed -i "s|<NODE_ENV>|$NODE_ENV|" ./k8s/configmap.yaml
       sed -i "s|<CORS_ALLOWED_DOMAIN>|$CORS_ALLOWED_DOMAIN|" ./k8s/configmap.yaml
       sed -i "s|<AWS_S3_BUCKET_NAME>|$AWS_S3_BUCKET_NAME|" ./k8s/configmap.yaml
-      sed -i "s|<AWS_SNS_TOPIC_ARN>|$AWS_SNS_TOPIC_ARN|" ./k8s/configmap.yaml
+      sed -i "s|<AWS_SNS_TOPIC_ARN>|$AWS_SNS_TOPIC_ARN|" ./k8s/configmap.yaml ./k8s/secrets.yaml
       sed -i "s|<API_SECURITY_KEY>|$API_SECURITY_KEY|" ./k8s/secrets.yaml
       sed -i "s|<API_STYLES_KEY>|$API_STYLES_KEY|" ./k8s/secrets.yaml
       sed -i "s|<AWS_QUEUE_SQS_JDA_SKU_SYNC_URL>|$AWS_QUEUE_SQS_JDA_SKU_SYNC_URL|" ./k8s/secrets.yaml
@@ -112,7 +120,7 @@ paris-cl-ecosistema-compra-dev:
     ENVIRONMENT: dev
     REGISTRY_AUTH_NAME: gitlab-auth-${CI_PROJECT_NAME}
     CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-sync-svc"
-    IMG_TAG: ${CI_COMMIT_REF_NAME}-${CI_PIPELINE_IID}-${CI_COMMIT_SHORT_SHA}
+    IMG_TAG: ${CI_COMMIT_REF_NAME}
     SECRET_NAME: ${CI_PROJECT_NAME}-secrets
     NAMESPACE: paris-cl-ecosistema-compra
     SERVICE_NAME: ${CI_PROJECT_NAME}
@@ -137,7 +145,7 @@ paris-cl-ecosistema-compra-prod:
     ENVIRONMENT: production
     REGISTRY_AUTH_NAME: gitlab-auth-${CI_PROJECT_NAME}
     CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-sync-svc"
-    IMG_TAG: ${CI_COMMIT_REF_NAME}-${CI_PIPELINE_IID}-${CI_COMMIT_SHORT_SHA}
+    IMG_TAG: ${CI_COMMIT_REF_NAME}
     SECRET_NAME: ${CI_PROJECT_NAME}-secrets
     NAMESPACE: paris-cl-ecosistema-compra
     SERVICE_NAME: ${CI_PROJECT_NAME}
@@ -150,3 +158,82 @@ paris-cl-ecosistema-compra-prod:
   environment:
     name: prd
   when: manual
+
+
+# Despliega las credenciales en un repositorio unificado para que argocd realice el despliege
+.gitops_deploy_definition: &gitops_deploy_definition
+  extends: .deploy_git_ssh
+  script:
+    - git clone git@gitlab.com:cencosud-ds/arquitectura-plataforma/data-arq/airflow-secrets.git
+    - mkdir -p airflow-secrets/${AS_ENVIRONMENT_NAME}/namespaces/$NAMESPACE && cd "$_"
+    - git checkout master
+    - echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" >> /tmp/secrets.file
+    - echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" >> /tmp/secrets.file
+    - echo "TYPEORM_HOST=${TYPEORM_HOST}" >> /tmp/secrets.file
+    - echo "TYPEORM_PORT=${TYPEORM_PORT}" >> /tmp/secrets.file
+    - echo "TYPEORM_USERNAME=${TYPEORM_USERNAME}" >> /tmp/secrets.file
+    - echo "TYPEORM_PASSWORD=${TYPEORM_PASSWORD}" >> /tmp/secrets.file
+    - echo "TYPEORM_DATABASE=${TYPEORM_DATABASE}" >> /tmp/secrets.file
+    - echo "TYPEORM_LOGGING=schema" >> /tmp/secrets.file
+    - echo "AWS_SNS_TOPIC_ARN=${AWS_SNS_TOPIC_ARN}" >> /tmp/secrets.file
+    - echo "API_SECURITY_KEY=${API_SECURITY_KEY}" >> /tmp/secrets.file
+    - echo "API_STYLES_KEY=${API_STYLES_KEY}" >> /tmp/secrets.file
+    - echo "AWS_QUEUE_SQS_JDA_SKU_SYNC_URL=${AWS_QUEUE_SQS_JDA_SKU_SYNC_URL}" >> /tmp/secrets.file
+    - echo "API_KEY=${API_KEY}" >> /tmp/secrets.file
+    - echo "AS400HOST=${AS400HOST}" >> /tmp/secrets.file
+    - echo "AS400USER=${AS400USER}" >> /tmp/secrets.file
+    - echo "AS400PASS=${AS400PASS}" >> /tmp/secrets.file
+    - echo "AS400PGMSKU=${AS400PGMSKU}" >> /tmp/secrets.file
+    - echo "JWT_SECRET=${JWT_SECRET}" >> /tmp/secrets.file
+    - echo "AWS_REGION=us-east-1" >> /tmp/secrets.file
+    - |
+      kubectl create secret generic ${CI_PROJECT_NAME}-secrets \
+        --namespace=$NAMESPACE \
+        --from-env-file=/tmp/secrets.file \
+        --dry-run=client -o yaml \
+        > /tmp/${CI_PROJECT_NAME}-secrets.yaml
+    - kubeseal --cert ${KUBESEAL_ENDPOINT} < /tmp/${CI_PROJECT_NAME}-secrets.yaml > ${CI_PROJECT_NAME}-secrets.yaml -o yaml
+    - |
+      kubectl create secret docker-registry gitlab-auth-$CI_PROJECT_NAME \
+        --docker-server=$CI_REGISTRY \
+        --docker-username=$CI_DEPLOY_USER \
+        --docker-password=$CI_DEPLOY_PASSWORD \
+        -n $NAMESPACE --dry-run=client -o yaml \
+        > /tmp/gitlab-auth-$CI_PROJECT_NAME.yaml
+    - kubeseal --cert ${KUBESEAL_ENDPOINT} < /tmp/gitlab-auth-$CI_PROJECT_NAME.yaml > gitlab-auth-$CI_PROJECT_NAME.yaml -o yaml
+    - cd ../../../
+    - git add .
+    - git commit -m "[skip ci] - Updating k8s manifests for ${CI_PROJECT_NAME} in environment ${CI_ENVIRONMENT_NAME}, commit $CI_COMMIT_SHORT_SHA" || echo "No changes, nothing to commit!"
+    - git push origin master
+
+Airflow Staging:
+  <<: *gitops_deploy_definition
+  stage: staging deploy
+  variables:
+    AS_ENVIRONMENT_NAME: staging
+    KUBESEAL_ENDPOINT: ${PARISTECH_KUBESEAL_STAGING_ENDPOINT}
+    NAMESPACE: paris-cl-ecosistema-compra
+  environment:
+    name: dev
+  tags:
+    - private
+    - staging
+  only:
+    refs:
+      - branches
+
+Airflow Production:
+  <<: *gitops_deploy_definition
+  stage: production deploy
+  variables:
+    AS_ENVIRONMENT_NAME: production
+    KUBESEAL_ENDPOINT: ${PARISTECH_KUBESEAL_PRODUCTION_ENDPOINT}
+    NAMESPACE: paris-cl-ecosistema-compra
+  environment:
+    name: prd
+  tags:
+    - private
+    - production
+  only:
+    refs:
+      - master

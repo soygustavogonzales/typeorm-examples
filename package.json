@@ -23,7 +23,9 @@
         "migration:create": "npm run typeorm migration:create -- -n",
         "migration:show": "npm run typeorm migration:show",
         "migration:run": "npm run typeorm migration:run ",
-        "migration:revert": "npm run typeorm migration:revert"
+        "migration:revert": "npm run typeorm migration:revert",
+        "sync:oc": "node dist/sync-oc",
+        "sync:sku": "node dist/sync-sku"
     },
     "dependencies": {
         "@nestjs/common": "^6.7.2",
