@@ -63,7 +63,7 @@ export class JdaOcSyncService {
             .addGroupBy('provider.id')
             .addGroupBy('provider.codeJda')
             .getRawMany();
-        console.log('PI-SYNC: ', pendingOc.length);
+
         const piInfo = [];
         let queryList = pendingOc.map(pi => `(PONOT1 LIKE '%${pi.pi}%' AND POVNUM = ${pi.providerjda} AND POSTAT = '3')`);
         let i = 0;
