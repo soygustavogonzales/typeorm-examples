@@ -1546,17 +1546,22 @@ export class ReportService {
                         this.logger.debug(`styleId ${style.styleId} and providerId ${style.providerId} doesn't match with any SKU`, 'generatePurchaseOrder');
                     }
                     const skuColor = sku?.skuColor.find(color => color.styleColorId === style.styleColorId);
-
+                    
+                    let channel = 1;
                     let localCode = style.store.localCode;
                     if (tpStore && tpStore.length > 0 && style.store.shortName === 'PW' && brandJdaCodes.filter(c => c === styleData.brandJdaCode).length > 0) {
                         localCode = _.first(tpStore)?.localCode;
+                        channel = 4;
+                    }
+                    if (style.store.shortName === 'TP') {
+                        channel = 4;
                     }
                     if (skuColor) {
                         return skuColor.skuColorSize.map(skuColorSize => {
                             if (skuColorSize) {
                             const units = (totalUnits/sumRatio)*skuColorSize.ratio;
                             return {
-                                channel: 1,
+                                channel,
                                 localCode,
                                 providerJdaCode: style.providerJdaCode,
                                 sku: skuColorSize.sku,
