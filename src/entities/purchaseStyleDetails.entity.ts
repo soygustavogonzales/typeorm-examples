@@ -13,6 +13,7 @@ import { SeasonSticker } from './seasonSticker.entity';
 import { Cso } from './cso.entity';
 import { ExitPort } from './exitPort.entity';
 import { PurchaseStyleNegotiation } from './purchaseStyleNegotiation.entity';
+import { SustainableFeature } from './sustainableFeature.entity';
 
 @Entity()
 export class PurchaseStyleDetails {
@@ -121,6 +122,9 @@ export class PurchaseStyleDetails {
 
     @ManyToOne(() => Rse, { nullable: true })
     rse: Rse;
+
+    @ManyToOne(() => SustainableFeature, { nullable: true })
+    sustainableFeature: SustainableFeature;
 
     @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.rse)
     rseId: number;
