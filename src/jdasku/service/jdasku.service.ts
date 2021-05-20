@@ -400,7 +400,7 @@ export class JdaskuService {
 
         return {
             indicadorSkuEstilo: 1,
-            proveedor: parseInt(sku.provider.codeJda, 10),
+            proveedor: parseInt(sku.provider?.codeJda, 10),
             departamento: parseInt(style.classTypeCode.slice(0, 3), 10),
             subDepartamento: parseInt(style.classTypeCode.slice(3, 6), 10),
             clase: parseInt(style.classTypeCode.slice(6, 9), 10),
