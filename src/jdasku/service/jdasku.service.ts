@@ -165,7 +165,7 @@ export class JdaskuService {
                             const sizesOk = color.skuColorSize.filter(size => size.sku).length;
                             return (sizes === sizesOk) ? 1 : 0;
                         });
-                        if (colors === colorsOk.reduce((prev, curr) => prev + curr)) {
+                        if (colors === colorsOk.reduce((prev, curr) => prev + curr, 0)) {
                             groupedStyles[groupData].stylesWSku.push(styleData.id);
                         }
                     }
@@ -400,7 +400,7 @@ export class JdaskuService {
 
         return {
             indicadorSkuEstilo: 1,
-            proveedor: parseInt(sku.provider.codeJda, 10),
+            proveedor: parseInt(sku.provider?.codeJda, 10),
             departamento: parseInt(style.classTypeCode.slice(0, 3), 10),
             subDepartamento: parseInt(style.classTypeCode.slice(3, 6), 10),
             clase: parseInt(style.classTypeCode.slice(6, 9), 10),

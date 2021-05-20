@@ -32,4 +32,8 @@ export class StoreService {
     const stores = await this.storeRepository.findByIds(storesId);
     return stores;
   }
+  
+  async getByShortName(shortName: string) {
+    return await this.storeRepository.find({ where: { shortName } });
+  }
 }
