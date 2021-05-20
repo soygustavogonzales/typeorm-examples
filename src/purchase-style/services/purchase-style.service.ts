@@ -344,6 +344,7 @@ export class PurchaseStyleService {
                 .leftJoinAndSelect('details.size', 'size')
                 .leftJoinAndSelect('details.ratio', 'ratio')
                 .leftJoinAndSelect('details.rse', 'rse')
+                .leftJoinAndSelect('details.sustainableFeature', 'sustainableFeature')
                 .leftJoinAndSelect('details.cso', 'cso')
                 .leftJoinAndSelect('purchaseStyle.colors', 'colors')
                 .leftJoinAndSelect('colors.status', 'colorStatus')
