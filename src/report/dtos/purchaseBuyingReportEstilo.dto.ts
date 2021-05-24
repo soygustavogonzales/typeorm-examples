@@ -51,7 +51,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
             cbm: 'CBM',
             totalCbm: 'TOTAL CBM',
             dimension: 'DIMENSION',
-            rse: 'RSE',
+            rse: 'RSE EDITADO',
             sustainableFeature: 'SUSTAINABLE FEATURE',
             composition: 'COMPOSITION',
             weaving: 'WEAVING',
