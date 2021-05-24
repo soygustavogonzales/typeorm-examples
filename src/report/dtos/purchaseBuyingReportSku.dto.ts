@@ -157,7 +157,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                 totalCbm: styleData.cbm * totalQty,
                                 dimension: styleData.dimension,
                                 rse: styleDetails.rse?.name || '',
-                                sustainableFeature: styleData.sustainableFeature?.name || '',
+                                sustainableFeature: styleDetails.sustainableFeature?.name || '',
                                 composition: styleDetails.composition || '',
                                 weaving: styleDetails.fabricWeaving || '',
                                 construction: styleDetails.fabricConstruction || '',
