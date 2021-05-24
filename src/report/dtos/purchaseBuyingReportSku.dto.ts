@@ -46,7 +46,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
             cbm: 'CBM',
             dimension: 'DIMENSION',
             totalCbm: 'TOTAL CBM',
-            rse: 'RSE',
+            rse: 'RSE EDITADO',
             sustainableFeature: 'SUSTAINABLE FEATURE',
             composition: 'COMPOSITION',
             weaving: 'WEAVING',
