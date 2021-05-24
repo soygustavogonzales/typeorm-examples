@@ -146,7 +146,7 @@ Green Production:
     KUBESEAL_ENDPOINT: ${PARISTECH_KUBESEAL_PRODUCTION_ENDPOINT}
     NAMESPACE: paris-cl-ecosistema-compra
   only:
-    - branches
+    - master
   environment:
     name: prd
   when: manual
