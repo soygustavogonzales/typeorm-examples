@@ -140,9 +140,9 @@ export class ReportService {
                         const packingMethod = styleDetails.packingMethod.name;
 
                         if (!((unit === 'PARIS E-COMMERCE' || unit === 'TIENDAS PROPIAS') && size === 'SURT') &&
-                            !(unit === 'PARIS' && atcId != '' && size === 'SURT') &&
-                            !(unit === 'PARIS' && atcId == '' && (size !== 'SURT' && size !== 'TU' && packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')) &&
-                            !(unit === 'PARIS' && atcId == '' && (size === 'SURT' && (packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7')))) {
+                            !(unit === 'PARIS' && styleDetails.atc && size === 'SURT') &&
+                            !(unit === 'PARIS' && !styleDetails.atc && (size !== 'SURT' && size !== 'TU' && packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')) &&
+                            !(unit === 'PARIS' && !styleDetails.atc && (size === 'SURT' && (packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7')))) {
                               
                             for (const shipping of color.shippings) {
                                 const unitsPerInner = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b);
