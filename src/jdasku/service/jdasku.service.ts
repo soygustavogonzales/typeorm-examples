@@ -352,7 +352,18 @@ export class JdaskuService {
                             ratio: parseInt(curva[idx], 10),
                         };
                     });
+
                     skuColor.skuColorSize = (await Promise.all(skuColorSize)).filter(size => size);
+                    if (!style.details.atc){
+                        const sizeJda = await this.sizeJda.findOne({ where: { jdaCode: 'M003' } });
+                        skuColor.skuColorSize.push({
+                            skuColor,
+                            sizeJda,
+                            size: style.details.size,
+                            ratio: curva.map(x => parseInt(x, 10)).reduce((a, b) => a + b),
+                        });
+                    }
+
                     return skuColor;
                 });
                 sku.skuColor = (await Promise.all(skuColors)).filter(color => color.skuColorSize.length > 0);
