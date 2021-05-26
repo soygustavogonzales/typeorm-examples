@@ -6,18 +6,17 @@ import { GetUserDto } from '../../external-services/security-proxy/dtos/getUser.
 import { PurchaseStyleColorShipping } from '../../entities/purchaseStyleColorShipping.entity';
 
 export class PurchaseStyleOrderRecapDto {
-
     status: string;
     season: string;
-    productSeason: string;
-    tripDate: string;
+    // productSeason: string;
+    // tripDate: string;
     unit: string;
     division: string;
     divisionId: number;
     departmentCode: string;
     department: string;
     departmentId: string;
-    classTypeCode: string;
+    // classTypeCode: string;
     classType: string;
     classTypeId: string;
     providerCode: string;
@@ -32,9 +31,9 @@ export class PurchaseStyleOrderRecapDto {
     gauge: string;
     styleCode: string;
     color: string;
-    colorCode: string;
-    collection: string;
-    profile: string;
+    // colorCode: string;
+    // collection: string;
+    // profile: string;
     origin: string;
     shippingMethod: string;
     ratio: string;
@@ -45,21 +44,21 @@ export class PurchaseStyleOrderRecapDto {
     atc: string;
     unitsPerInner: number;
     innerPerMaster: number;
-    cbm: number;
-    totalCbm: number;
+    // cbm: number;
+    // totalCbm: number;
     rse: string;
     // totalQty: number;
-    firstDelivery: string;
+    // firstDelivery: string;
     fob: number;
-    totalFob: number;
+    // totalFob: number;
     brandManager: string;
-    productManager: string;
+    // productManager: string;
     designer: string;
     piNumber: string;
     country: string;
     sticker: string;
     internetDescription: string;
-    segment: string;
+    // segment: string;
     delivery: string;
     units: number;
     date: string;
@@ -75,20 +74,20 @@ export class PurchaseStyleOrderRecapDto {
 
     constructor(styleData: any, styleDetails: PurchaseStyleDetails, purchaseStyle: PurchaseStyle, color: PurchaseStyleColor, colorData: any, users: GetUserDto[], shipping: PurchaseStyleColorShipping) {
         
-        const firsDeliveryDate = color.shippings.map(s => s.date).sort((a, b) => a.getTime() - b.getTime())[0];
+        // const firsDeliveryDate = color.shippings.map(s => s.date).sort((a, b) => a.getTime() - b.getTime())[0];
         const brandManager = users?.find(u => u.id.toString() == styleDetails.brandManager);
-        const productManager = users?.find(u => u.id.toString() == styleDetails.productManager);
+        // const productManager = users?.find(u => u.id.toString() == styleDetails.productManager);
         const designer = users?.find(u => u.id.toString() == styleDetails.designer);
         
         this.status = 'Confirmed',
         this.season = purchaseStyle.purchaseStore.purchase.seasonCommercial.name,
-        this.productSeason = styleData.seasonProduct,
-        this.tripDate = moment(purchaseStyle.purchaseStore.purchase.tripDate).format('MMM-yyyy'),
+        // this.productSeason = styleData.seasonProduct,
+        // this.tripDate = moment(purchaseStyle.purchaseStore.purchase.tripDate).format('MMM-yyyy'),
         this.unit = purchaseStyle.purchaseStore.store.name,
         this.division = styleData.division,
         this.departmentCode = styleData.departmentCode,
         this.department = styleData.department,
-        this.classTypeCode = styleData.classTypeCode,
+        // this.classTypeCode = styleData.classTypeCode,
         this.classType = styleData.classType,
         this.providerCode = styleDetails.provider?.codeJda,
         this.provider = styleDetails.provider?.name,
@@ -100,9 +99,9 @@ export class PurchaseStyleOrderRecapDto {
         this.gauge = styleDetails.gauge,
         this.styleCode = styleData.code,
         this.color = colorData.colorName,
-        this.colorCode = colorData.colorCode,
-        this.collection = styleDetails.collection,
-        this.profile = styleData.profileJdaCode,
+        // this.colorCode = colorData.colorCode,
+        // this.collection = styleDetails.collection,
+        // this.profile = styleData.profileJdaCode,
         this.origin = styleDetails.origin?.name,
         this.shippingMethod = styleDetails.shippingMethod?.name,
         this.ratio = styleDetails.ratio?.ratio,
@@ -111,23 +110,24 @@ export class PurchaseStyleOrderRecapDto {
         this.hanger = styleDetails.hanger ? 'YES' : 'NO',
         this.vstTag = styleDetails.vstTag ? 'YES' : 'NO',
         this.atc = styleDetails.atc ? 'YES' : 'NO',
-        this.unitsPerInner = styleDetails.ratio ? styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b) : 0, // calculate by ;
-        this.innerPerMaster = styleData.divisionMaster, // calculate by ;
-        this.cbm = (styleData.cbm *(Math.sqrt(styleData.cbm))/(Math.sqrt(styleData.cbm))),
-        this.totalCbm = color.getTotalUnits() * styleData.cbm, // TODO = Pending
+        this.unitsPerInner = styleDetails.ratio ? styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b) : 0,
+        this.innerPerMaster = styleData.divisionMaster,
+        // this.cbm = (styleData.cbm *(Math.sqrt(styleData.cbm))/(Math.sqrt(styleData.cbm))),
+        // this.totalCbm = color.getTotalUnits() * styleData.cbm,
         this.rse = styleDetails.rse?.name || '',
         // this.totalQty = color.getTotalUnits(),
-        this.firstDelivery = firsDeliveryDate ? moment(firsDeliveryDate).format('DD-MMM-yyyy') : '', // check
-        this.fob = (styleDetails.fob*(Math.sqrt(styleData.cbm)))/(Math.sqrt(styleData.cbm)),//Debido a que por defecto ocurre un error y en el excel no reconoce el valor numerico, al hacer un calculo adicional se reactualiza el formato numerico del atributo FOB
-        this.totalFob = color.getTotalUnits() * styleDetails.fob, // TODO= pending
+        // this.firstDelivery = firsDeliveryDate ? moment(firsDeliveryDate).format('DD-MMM-yyyy') : '',
+        // Debido a que por defecto ocurre un error y en el excel no reconoce el valor numerico, al hacer un calculo adicional se reactualiza el formato numerico del atributo FOB
+        this.fob = (styleDetails.fob*(Math.sqrt(styleData.cbm)))/(Math.sqrt(styleData.cbm)),
+        // this.totalFob = color.getTotalUnits() * styleDetails.fob,
         this.brandManager = brandManager ? `${brandManager.firstName} ${brandManager.lastName}` : '',
-        this.productManager = productManager ? `${productManager.firstName} ${productManager.lastName}` : '' ,
+        // this.productManager = productManager ? `${productManager.firstName} ${productManager.lastName}` : '' ,
         this.designer = designer ? `${designer.firstName} ${designer.lastName}` : '' ,
         this.piNumber = shipping.piName,
         this.country = purchaseStyle.purchaseStore.store.destinyCountry.name,
         this.sticker = styleDetails.seasonSticker.name,
         this.internetDescription = styleDetails.internetDescription,
-        this.segment = styleDetails.segment?.name || '',
+        // this.segment = styleDetails.segment?.name || '',
         this.delivery = shipping.shipping,
         this.units = shipping.units,
         this.date = moment(shipping.date).format('DD-MMM-yyyy'),
@@ -149,13 +149,10 @@ export class PurchaseStyleOrderRecapDto {
 export const headerOrderRecap = {
     status: 'STATUS',
     season: 'SEASON',
-    productSeason: 'PRODUCT SEASON',
-    tripDate: 'TRIP DATE',
     unit: 'UNIT',
     division: 'DIVISION',
     departmentCode: 'ID DEPT',
     department: 'DEPT',
-    classTypeCode: 'CLASS',
     classType: 'CLASS DESC',
     providerCode: 'VENDOR',
     provider: 'VENDOR DESC',
@@ -167,38 +164,41 @@ export const headerOrderRecap = {
     gauge: 'GAUGE',
     styleCode: 'STYLE',
     color: 'COLOR',
-    colorCode: 'ID COLOR',
-    collection: 'COLLECTION',
-    profile: 'PROFILE',
     origin: 'ORIGIN',
     shippingMethod: 'SHIPPING METHOD',
-    ratio: 'RATIO', // add to join,
-    size: 'SIZE', // add to join
+    ratio: 'RATIO',
+    size: 'SIZE',
     packingMethod: 'PACKING METHOD',
     hanger: 'HANGER',
     vstTag: 'VST TAG',
     atc: 'ATC',
-    unitsPerInner: 'UNITS PER INNER', // calculate by ratio,
-    innerPerMaster: 'INNER PER MASTER', // calculate by ratio,
-    cbm: 'CBM', // TODO: Pending
-    totalCbm: 'TOTAL CBM', // TODO: Pending
+    unitsPerInner: 'UNITS PER INNER',
+    innerPerMaster: 'INNER PER MASTER',
     rse: 'RSE',
-    // totalQty: 'TOTAL QTY',
-    firstDelivery: 'FIRST DELIVERY', // check
     fob: 'FOB',
-    totalFob: 'TOTAL FOB', // TODO: pendingratio: 'RATIO', // add to join,
-    brandManager: 'BRAND MANAGER', // TODO: Pending
-    productManager: 'PRODUCT MANAGER', // TODO: Pending
+    brandManager: 'BRAND MANAGER',
     designer: 'DESIGNER',
     piNumber: 'PI NUMBER',
     country: 'COUNTRY',
     sticker: 'STICKER',
     internetDescription: 'INTERNET DESCRIPTION',
-    segment: 'SEGMENTATION',
     delivery: 'DELIVERY',
     units: 'UNITS',
     date: 'DATE',
     category: 'CATEGORY',
     exitPort: 'EXIT PORT NAME',
     exitPortCode: 'EXIT PORT CODE',
+    // productSeason: 'PRODUCT SEASON',
+    // tripDate: 'TRIP DATE',
+    // classTypeCode: 'CLASS',
+    // colorCode: 'ID COLOR',
+    // collection: 'COLLECTION',
+    // profile: 'PROFILE',
+    // cbm: 'CBM',
+    // totalCbm: 'TOTAL CBM',
+    // totalQty: 'TOTAL QTY',
+    // firstDelivery: 'FIRST DELIVERY',
+    // totalFob: 'TOTAL FOB',
+    // productManager: 'PRODUCT MANAGER',
+    // segment: 'SEGMENTATION',
 }
