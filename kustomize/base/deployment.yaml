@@ -86,7 +86,7 @@ spec:
       imagePullSecrets:
       - name: gitlab-auth-ecom-sync-svc
       nodeSelector:
-        node-role.kubernetes.io/user: "true"
+        node.kubernetes.io/role: "user"
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
