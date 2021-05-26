@@ -291,7 +291,6 @@ export class ReportService {
         purchaseStyles.map(purchaseStyle => {
             purchaseStyle.colors.map(color => {
                 const styleData = stylesData.find(s => s.id === purchaseStyle.styleId);
-                console.log('styleData >>',styleData);
                 const styleDetails = purchaseStyle.details[0]; // TODO: filter by detail type
                 const colorData = styleData.colors.find(c => c.id === color.styleColorId);
                 if (styleData && styleDetails && colorData) {
