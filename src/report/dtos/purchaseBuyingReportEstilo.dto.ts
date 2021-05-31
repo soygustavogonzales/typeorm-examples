@@ -65,6 +65,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
             totalFob: 'TOTAL FOB', // TODO: pending
             dollarBought: 'DOLLAR BOUGHT', // TODO: Pending,
             importFactor: 'IMPORT FACTOR', // TODO: Pending,
+            imu: 'IMU',
+            imuSato: 'IMU SATO',
             cost: 'COST', // TODO: Pending
             totalCost: 'TOTAL COST', // TODO: Pending
             totalRetail: 'TOTAL RETAIL', // TODO: Pending
@@ -172,6 +174,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 totalFob: shipping.units * styleDetails.fob,
                                 dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                 importFactor: styleDetails.importFactor * 1 || 0,
+                                imu:this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva),
+                                imuSato:this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva),
                                 cost: (styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) || 0,
                                 totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * shipping.units * 1.0) || 0, // TODO: Pending
                                 totalRetail: (styleDetails.price * shipping.units) * 1.0, // TODO: Pending
@@ -200,161 +204,28 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
         }));
     }
 
-    /*async getPurchaseStylesByFilter(filter: FilterApprovalDto, statusColor: StatusPurchaseColorEnum, approved?, includeUnits0 = false) {
-        try {
-            let query = this.purchaseStyleRepository
-                .createQueryBuilder('purchaseStyle')
-                .leftJoinAndSelect('purchaseStyle.purchaseStore', 'purchaseStore')
-                .leftJoinAndSelect('purchaseStore.store', 'store')
-                .leftJoinAndSelect('store.destinyCountry', 'destinyCountry')
-                .leftJoinAndSelect('purchaseStore.purchase', 'purchase')
-                .leftJoinAndSelect('purchase.status', 'status')
-                .leftJoinAndSelect('purchase.seasonCommercial', 'seasonCommercial')
-                .leftJoinAndSelect('purchaseStyle.details', 'details')
-                .leftJoinAndSelect('details.category', 'category')
-                .leftJoinAndSelect('details.seasonSticker', 'seasonSticker')
-                .leftJoinAndSelect('details.shippingMethod', 'shippingMethod')
-                .leftJoinAndSelect('details.segment', 'segment')
-                .leftJoinAndSelect('details.provider', 'provider')
-                .leftJoinAndSelect('details.origin', 'origin')
-                .leftJoinAndSelect('details.packingMethod', 'packingMethod')
-                .leftJoinAndSelect('details.exitPort', 'exitPort')
-                .leftJoinAndSelect('details.size', 'size')
-                .leftJoinAndSelect('details.ratio', 'ratio')
-                .leftJoinAndSelect('details.rse', 'rse')
-                .leftJoinAndSelect('purchaseStyle.colors', 'colors')
-                .leftJoinAndSelect('colors.status', 'colorStatus')
-                .leftJoinAndSelect('colors.shippings', 'shippings')
-                .leftJoinAndMapMany('shippings.oc', OcJda, 'oc', 'shippings.piName = oc.piname')
-                .leftJoinAndMapMany('purchaseStyle.sku', Sku, 'sku', 'purchaseStyle.styleId = sku.styleId AND details.provider = sku.provider')
-                .where({ active: true })
-                .andWhere('colors.state = true');
-
-            if (!includeUnits0) {
-                query = query.andWhere('shippings.units<>0');
-            }
-            if (approved) {
-                query = query.andWhere('colors.approved = true')
-                    .andWhere('status.id=:id', { id: Status.Approvement });
-            } else {
-                query = query.andWhere(new Brackets((qb) => {
-                    qb = qb.orWhere('status.id=' + Status.Approvement);
-                    qb = qb.orWhere('status.id=' + Status.CompletePurchase);
-                }));
-            }
-            if (statusColor === StatusPurchaseColorEnum.ConfirmedOrCanceled) {
-                query = query.andWhere(new Brackets((qb) => {
-                    qb = qb.orWhere('colorStatus.id=' + StatusPurchaseColorEnum.Confirmed);
-                    qb = qb.orWhere('colorStatus.id=' + StatusPurchaseColorEnum.Canceled);
-                }));
-            } else if (statusColor) {
-                query = query.andWhere('colorStatus.id=' + statusColor);
-            }
-
-            if (filter.seasons && filter.seasons.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.seasons.forEach((seasonId) => {
-                            qb = qb.orWhere('purchase.seasonCommercial.id=' + seasonId);
-                        });
-                    }));
-            }
-            if (filter.tripDates && filter.tripDates.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.tripDates.forEach((tripDate) => {
-                            qb = qb.orWhere(`purchase."tripDate"::date='${tripDate}'`);
-                        });
-                    }));
-            }
-            if (filter.stores && filter.stores.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.stores.forEach((storeId) => {
-                            qb = qb.orWhere('store.id=' + storeId);
-                        });
-                    }));
-            }
-            if (filter.origins && filter.origins.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.origins.forEach((originId) => {
-                            qb = qb.orWhere('origin.id=' + originId);
-                        });
-                    }));
-            }
-            if (filter.providers && filter.providers.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.providers.forEach((providerId) => {
-                            qb = qb.orWhere('provider.id=' + providerId);
-                        });
-                    }));
-            }
-            if (filter.categories && filter.categories.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.categories.forEach((categoryId) => {
-                            qb = qb.orWhere('category.id=' + categoryId);
-                        });
-                    }));
-            }
-            if (filter.brands && filter.brands.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.brands.forEach((brandId) => {
-                            qb = qb.orWhere(brandId + '=ANY(purchase.brands)');
-                        });
-                    }));
-            }
-            if (filter.departments && filter.departments.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.departments.forEach((departmentId) => {
-                            qb = qb.orWhere(departmentId + '=ANY(purchase.departments)');
-                        });
-                    }));
-            }
-            if (filter.users && filter.users.length > 0) {
-                query = query.andWhere(
-                    new Brackets((qb) => {
-                        filter.users.forEach((userId) => {
-                            qb = qb.orWhere('purchase.userId=' + userId);
-                        });
-                    }));
-            }
-            if (filter.piName) {
-                query = query.andWhere(`shippings.piName=:piName`, { piName: filter.piName });
-            }
-            const purchaseStylesDb = await query.getMany();
-            const usersId = purchaseStylesDb.map(p => p.details[0].brandManager).concat(purchaseStylesDb.map(p => p.details[0].productManager)).concat(purchaseStylesDb.map(p => p.details[0].designer));
-            const uniqUsersId = _.uniq(usersId.map(user => {
-                const id = parseInt(user, null);
-                return id && !isNaN(id) ? id : -1;
-            }));
-            const users = uniqUsersId && uniqUsersId.length > 0 ? await this.securityProxyService.getUsers({ ids: uniqUsersId, departments: [], roles: [] }) : null;
-
-            const stylesIds = Array.from(new Set(purchaseStylesDb.map(s => s.styleId)));
-            if (stylesIds.length > 0 && (((filter.departments && filter.departments.length > 0) || (filter.brands && filter.brands.length > 0)) || approved)) {
-                let stylesData = await this.externalStyleService.getStylesDataByIds(stylesIds);
-                if (stylesIds.length > 0 && stylesData.length === 0) {
-                    this.logger.error('Datos de estilos no encontrados');
-                    return null;
-                }
-                if (filter.brands && filter.brands.length > 0) {
-                    stylesData = stylesData.filter(s => filter.brands.indexOf(s.brandId) !== -1);
-                }
-                if (filter.departments && filter.departments.length > 0) {
-                    stylesData = stylesData.filter(s => filter.departments.indexOf(s.departmentId) !== -1);
-                }
-
-                return { purchaseStyles: purchaseStylesDb.filter(p => stylesData.map(s => s.id).indexOf(p.styleId) !== -1), stylesData, users };
-            }
-
-            return { purchaseStyles: purchaseStylesDb, stylesData: null, users };
-        } catch (error) {
-            this.logger.error(error);
-            return { purchaseStyles: [], stylesData: null, users: null };
+    protected getImu(price: number, fob: number, importFactor: number, dollarChange:number, iva:number): number {
+        // TODO: Calcular IMU en base al precio 
+        // (( price / (1 + iva ) )-  fob * this.dollarChange * importFactor) / (price / (1 + iva)) *100
+        // (( 24990 / (1 + 0.19) ) - 7.2 * 900               * 1.08        )/ (24990 / (1 + 0.19)) *100     ---->>> 66.67428
+        // const iva = this.storeTabs[this.tabGroup.selectedIndex]?.destinyCountry.iva / 100 || 0;
+        if (price && price !== 0 && price !== -1 && iva !== 0) {
+          const responsePrice = ((price / (1 + iva)) - fob * dollarChange * importFactor) / (price / (1 + iva));
+          return responsePrice;
         }
-    }*/
+        return 0;
+        // ((PRECIO / (1 + IMPUESTO PAIS)) - FOB * DÓLAR * FACTOR DE IMPORTACION ) /(PRECIO/(1 + IMPUESTO PAIS)
+    }
+    protected getImuSato(sato: number, fob: number, importFactor: number, dollarChange:number, iva:number): number {
+        // TODO: Calcular IMUSATO en base al precio sato 
+
+        if (sato && sato !== 0 && sato !== -1 && iva !== 0) {
+            const responseSato = ((sato / (1 + iva)) - fob * dollarChange * importFactor) / (sato / (1 + iva));
+            return responseSato;
+          }
+      
+          return 0;
+        // ((PRECIO SATO/ (1 + IMPUESTO PAIS)) - FOB * DÓLAR * FACTOR DE IMPORTACION ) /(PRECIO SATO/(1 + IMPUESTO PAIS)
+    }
+    
 }
