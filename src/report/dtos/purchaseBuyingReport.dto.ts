@@ -19,7 +19,7 @@ export abstract class PurchaseBuyingReport {
     private requestReport: RequestReport;
     private bufferFile: any;
 
-    protected abstract processData(purchaseStyles, stylesData, styleSkus, users): void;
+    protected abstract processData(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData): void;
 
     public async sendNotification(userId: number): Promise<void> {
         const notificationPublisherService = new NotificationPublisherService(this.config);
@@ -33,10 +33,6 @@ export abstract class PurchaseBuyingReport {
         };
         const publication = await notificationPublisherService.publishMessageToTopic(JSON.stringify(notification));
     }
-
-    /*protected requestReport() {
-
-    }*/
 
     public xlsxReport() {
         const workBook = XLSX.utils.book_new();
@@ -79,30 +75,4 @@ export abstract class PurchaseBuyingReport {
             )
         });
     }
-    
-    /*public async uploadReport(bufferFile = this.bufferFile) {
-        this.AWS_S3_BUCKET_NAME = this.config.get('aws').aws_s3_bucket_name;
-        AWS.config.update({
-            accessKeyId: this.config.get('aws').aws_access_key_id,
-            secretAccessKey: this.config.get('aws').aws_secret_access_key,
-        });
-        this.s3 = new AWS.S3();
-        await this.s3.putObject(
-            {
-                Bucket: this.AWS_S3_BUCKET_NAME,
-                Body: bufferFile,
-                Key: `reports/${this.reportName}`,
-                ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            },
-            async (error: AWS.AWSError, data: AWS.S3.PutObjectOutput) => {
-                if (error) {
-                    this.logger.error(`Error cargando el archivo de reporte: ${error}`);
-                    return '';
-                } else {
-                    const params = { Bucket: this.AWS_S3_BUCKET_NAME, Key: `reports/${this.reportName}`, Expires: 10800 }; // 3 HR
-                    this.reportUrl = this.s3.getSignedUrl('getObject', params);
-                }
-            },
-        ).promise();
-    }*/
 }
