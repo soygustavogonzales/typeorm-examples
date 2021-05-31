@@ -52,11 +52,13 @@ dockerize:
   only:
     - branches
   script:
-    - export TAG="$CI_COMMIT_REF_NAME"
+    - export TAG="$CI_COMMIT_REF_NAME-$CI_PIPELINE_IID-$CI_COMMIT_SHORT_SHA"
     - export IMAGE_TAG="$CI_REGISTRY_IMAGE:$TAG"
     - echo $IMAGE_TAG
     - docker build --network host -t $IMAGE_TAG -f docker/Dockerfile .
     - docker push $IMAGE_TAG
+    - docker tag $IMAGE_TAG $CI_REGISTRY_IMAGE:airflow
+    - docker push $CI_REGISTRY_IMAGE:airflow
 
 .deploy_script: &deploy_script
   image:
@@ -120,7 +122,7 @@ paris-cl-ecosistema-compra-dev:
     ENVIRONMENT: dev
     REGISTRY_AUTH_NAME: gitlab-auth-${CI_PROJECT_NAME}
     CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-sync-svc"
-    IMG_TAG: ${CI_COMMIT_REF_NAME}
+    IMG_TAG: ${CI_COMMIT_REF_NAME}-${CI_PIPELINE_IID}-${CI_COMMIT_SHORT_SHA}
     SECRET_NAME: ${CI_PROJECT_NAME}-secrets
     NAMESPACE: paris-cl-ecosistema-compra
     SERVICE_NAME: ${CI_PROJECT_NAME}
@@ -145,7 +147,7 @@ paris-cl-ecosistema-compra-prod:
     ENVIRONMENT: production
     REGISTRY_AUTH_NAME: gitlab-auth-${CI_PROJECT_NAME}
     CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-sync-svc"
-    IMG_TAG: ${CI_COMMIT_REF_NAME}
+    IMG_TAG: ${CI_COMMIT_REF_NAME}-${CI_PIPELINE_IID}-${CI_COMMIT_SHORT_SHA}
     SECRET_NAME: ${CI_PROJECT_NAME}-secrets
     NAMESPACE: paris-cl-ecosistema-compra
     SERVICE_NAME: ${CI_PROJECT_NAME}
