@@ -175,11 +175,6 @@ export class ReportService {
             });
         }));
 
-        // dataToExportSku = dataToExportSku.filter(row => !((row.unit === 'PARIS E-COMMERCE' || row.unit === 'TIENDAS PROPIAS') && row.size === 'SURT'));
-        // dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId != '' && row.size === 'SURT'));
-        // dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size !== 'SURT' && row.size !== 'TU' && row.packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && row.packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')));
-        // dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size === 'SURT' && (row.packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || row.packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7'))));
-
         /* make the worksheet */
         const ws = XLSX.utils.json_to_sheet([headersSku, ...dataToExportSku], { skipHeader: true });
         // const stream = XLSX.stream.to_csv(ws);
@@ -220,7 +215,7 @@ export class ReportService {
         const subscriptionId = dto.subscriptionId;
         const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.Approvement });
         await this.requestReporRepository.save(requestReport);
-        const { purchaseStyles, stylesData, users } = await this.purchaseStyleService.getPurchaseStylesByFilter(dto, StatusPurchaseColorEnum.ConfirmedOrCanceled, true);
+        const { purchaseStyles, stylesData, users, ocs, detailsData } = await this.purchaseStyleService.getPurchaseStylesByFilterV1(dto, StatusPurchaseColorEnum.ConfirmedOrCanceled, true);
 
         if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
             requestReport.status = 'No Data';
@@ -243,12 +238,12 @@ export class ReportService {
         let reportObject: PurchaseBuyingReport;
         switch (dto.level) {
             case 'CompraEstilo':
-                reportObject = new PurchaseBuyingReportEstilo(this.purchaseStyleRepository, purchaseStyles, stylesData, styleSkus, users, userId);
+                reportObject = new PurchaseBuyingReportEstilo(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData);
                 reportObject.reportName = 'BuyingReport_Estilo';
                 break;
             
             case 'CompraSku':
-                reportObject = new PurchaseBuyingReportSku(purchaseStyles, stylesData, styleSkus, users, userId);
+                reportObject = new PurchaseBuyingReportSku(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData);
                 reportObject.reportName = 'BuyingReport_SKU';
                 break;
         

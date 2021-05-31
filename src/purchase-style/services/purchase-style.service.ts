@@ -59,6 +59,10 @@ import { BadRequestException } from '@nestjs/common';
 import { SavePurchaseStyleDetailDto } from '../dtos/savePurchaseStyleDetail.dto';
 import { ShippingDatesChild } from '../../entities/shippingDatesChild.entity';
 import { generateArrivalDatesDto } from '../../purchase/dtos/generateArrivalDates.dto';
+import { TypeormHelper } from '../../shared/class/typeorm.helper';
+import { PurchaseStore } from '../../entities/purchaseStore.entity';
+import { Store } from '../../entities/store.entity';
+import { SustainableFeature } from '../../entities/sustainableFeature.entity';
 
 @Injectable()
 export class PurchaseStyleService {
@@ -66,6 +70,7 @@ export class PurchaseStyleService {
     private logger = new Logger('PurchaseStyleService');
     private AWS_S3_BUCKET_NAME: string;
     private s3: AWS.S3;
+    private typeormHelper: TypeormHelper;
 
     constructor(
         @InjectRepository(PurchaseStyleDetails)
@@ -88,6 +93,36 @@ export class PurchaseStyleService {
         private readonly exitPortRepository: Repository<ExitPort>,
         @InjectRepository(StatusPurchaseColor)
         private readonly statusPurchaseColorRepository: Repository<StatusPurchaseColor>,
+        @InjectRepository(PurchaseStore)
+        private readonly purchaseStoreRepository: Repository<PurchaseStore>,
+        @InjectRepository(Store)
+        private readonly storeRepository: Repository<Store>,
+        @InjectRepository(Sku)
+        private readonly skuRepository: Repository<Sku>,
+        @InjectRepository(OcJda)
+        private readonly ocJdaRepository: Repository<OcJda>,
+        @InjectRepository(Category)
+        private readonly categoryRepository: Repository<Category>,
+        @InjectRepository(SustainableFeature)
+        private readonly sustainableFeatureRepository: Repository<SustainableFeature>,
+        @InjectRepository(SeasonSticker)
+        private readonly seasonStickerRepository: Repository<SeasonSticker>,
+        @InjectRepository(Shipmethod)
+        private readonly shipmethodRepository: Repository<Shipmethod>,
+        @InjectRepository(Segment)
+        private readonly segmentRepository: Repository<Segment>,
+        @InjectRepository(OriginCountry)
+        private readonly originCountryRepository: Repository<OriginCountry>,
+        @InjectRepository(Packaging)
+        private readonly packagingRepository: Repository<Packaging>,
+        @InjectRepository(Size)
+        private readonly sizeRepository: Repository<Size>,
+        @InjectRepository(Ratio)
+        private readonly ratioRepository: Repository<Ratio>,
+        @InjectRepository(Rse)
+        private readonly rseRepository: Repository<Rse>,
+        @InjectRepository(Cso)
+        private readonly csoRepository: Repository<Cso>,
         private externalStyleService: StyleProxyService,
         private securityProxyService: SecurityProxyService,
         private importFactorService: ImportFactorService,
@@ -102,6 +137,7 @@ export class PurchaseStyleService {
             secretAccessKey: this.config.get('aws').aws_secret_access_key,
         });
         this.s3 = new AWS.S3();
+        this.typeormHelper = new TypeormHelper();
      }
 
     async getStyleModByFilter(dto: FilterStyleModDto) {
@@ -485,6 +521,236 @@ export class PurchaseStyleService {
         } catch (error) {
             this.logger.error(error);
             return { purchaseStyles: [], stylesData: null, users: null };
+        }
+    }
+
+    async getPurchaseStylesByFilterV1(filter: FilterApprovalDto, statusColor: StatusPurchaseColorEnum, approved?, includeUnits0 = false) {
+        try {
+            let query = this.purchaseStyleRepository.createQueryBuilder('purchaseStyle')
+                .leftJoinAndSelect('purchaseStyle.colors', 'colors')
+                .leftJoin('purchaseStyle.details', 'details')
+                .leftJoin('purchaseStyle.purchaseStore', 'purchaseStore')
+                .leftJoin('purchaseStore.store', 'store')
+                .leftJoin('purchaseStore.purchase', 'purchase')
+                .leftJoin('store.destinyCountry', 'destinyCountry')
+                .leftJoin('purchase.status', 'status')
+                .leftJoin('purchase.seasonCommercial', 'seasonCommercial')
+                .leftJoin('details.category', 'category')
+                .leftJoin('details.seasonSticker', 'seasonSticker')
+                .leftJoin('details.shippingMethod', 'shippingMethod')
+                .leftJoin('details.segment', 'segment')
+                .leftJoin('details.provider', 'provider')
+                .leftJoin('details.origin', 'origin')
+                .leftJoin('details.packingMethod', 'packingMethod')
+                .leftJoin('details.exitPort', 'exitPort')
+                .leftJoin('details.size', 'size')
+                .leftJoin('details.ratio', 'ratio')
+                .leftJoin('details.rse', 'rse')
+                .leftJoin('details.cso', 'cso')
+                .leftJoin('colors.status', 'colorStatus')
+                .leftJoin('colors.shippings', 'shippings')
+                .where({ active: true })
+                .andWhere('colors.state = true');
+
+            if (!includeUnits0) {
+                query = query.andWhere('shippings.units<>0');
+            }
+            if (approved) {
+                query = query.andWhere('colors.approved = true')
+                    .andWhere('status.id=:id', { id: Status.Approvement });
+            } else {
+                query = query.andWhere(new Brackets((qb) => {
+                    qb = qb.orWhere('status.id=' + Status.Approvement);
+                    qb = qb.orWhere('status.id=' + Status.CompletePurchase);
+                }));
+            }
+            if (statusColor === StatusPurchaseColorEnum.ConfirmedOrCanceled) {
+                query = query.andWhere(new Brackets((qb) => {
+                    qb = qb.orWhere('colorStatus.id=' + StatusPurchaseColorEnum.Confirmed);
+                    qb = qb.orWhere('colorStatus.id=' + StatusPurchaseColorEnum.Canceled);
+                }));
+            } else if (statusColor) {
+                query = query.andWhere('colorStatus.id=' + statusColor);
+            }
+            if (filter.purchaseId) {
+                query = query.andWhere('purchase.id=' + filter.purchaseId);
+            }
+            if (filter.seasons && filter.seasons.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.seasons.forEach((seasonId) => {
+                            qb = qb.orWhere('purchase.seasonCommercial.id=' + seasonId);
+                        });
+                    }));
+            }
+            if (filter.tripDates && filter.tripDates.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.tripDates.forEach((tripDate) => {
+                            qb = qb.orWhere(`purchase."tripDate"::date='${tripDate}'`);
+                        });
+                    }));
+            }
+            if (filter.stores && filter.stores.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.stores.forEach((storeId) => {
+                            qb = qb.orWhere('store.id=' + storeId);
+                        });
+                    }));
+            }
+            if (filter.origins && filter.origins.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.origins.forEach((originId) => {
+                            qb = qb.orWhere('origin.id=' + originId);
+                        });
+                    }));
+            }
+            if (filter.providers && filter.providers.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.providers.forEach((providerId) => {
+                            qb = qb.orWhere('provider.id=' + providerId);
+                        });
+                    }));
+            }
+            if (filter.categories && filter.categories.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.categories.forEach((categoryId) => {
+                            qb = qb.orWhere('category.id=' + categoryId);
+                        });
+                    }));
+            }
+            if (filter.brands && filter.brands.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.brands.forEach((brandId) => {
+                            qb = qb.orWhere(brandId + '=ANY(purchase.brands)');
+                        });
+                    }));
+            }
+            if (filter.departments && filter.departments.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.departments.forEach((departmentId) => {
+                            qb = qb.orWhere(departmentId + '=ANY(purchase.departments)');
+                        });
+                    }));
+            }
+            if (filter.users && filter.users.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.users.forEach((userId) => {
+                            qb = qb.orWhere('purchase.userId=' + userId);
+                        });
+                    }));
+            }
+            if (filter.shippings && filter.shippings.length > 0) {
+                query = query.andWhere('shippings.shipping IN (:...shippings)', { shippings: filter.shippings })
+            }
+            if (filter.piName) {
+                query = query.andWhere(`shippings.piName=:piName`, { piName: filter.piName });
+            }
+
+            const purchaseStylesDb = await query.getMany();
+            if (purchaseStylesDb.length <= 0) {
+                return { purchaseStyles: [], stylesData: null, users: null, ocs: [], detailsData: null };
+            }
+            // Load purchase relations
+            await this.typeormHelper.loadRelationships(this.purchaseStyleRepository, ['details', 'purchaseStore'], purchaseStylesDb);
+            await this.typeormHelper.loadRelationships(this.purchaseStoreRepository, ['purchase', 'store'], purchaseStylesDb.map(ps => ps.purchaseStore));
+            await this.typeormHelper.loadRelationships(this.purchaseStyleColorRepository, ['status', 'shippings'], _.flatten(purchaseStylesDb.map(ps => ps.colors.map(c => c))));
+            await this.typeormHelper.loadRelationships(this.purchaseRepository, ['status', 'seasonCommercial'], purchaseStylesDb.map(ps => ps.purchaseStore.purchase));
+            await this.typeormHelper.loadRelationships(this.storeRepository, ['destinyCountry'], purchaseStylesDb.map(ps => ps.purchaseStore.store));
+
+            const detailsData = {
+                providers: {},
+                exitPorts: {},
+                categories: {},
+                sustainableFeatures: {},
+                seasonStickers: {},
+                shippingMethods: {},
+                segments: {},
+                origins: {},
+                packingMethods: {},
+                sizes: {},
+                ratios: {},
+                rses: {},
+                csos: {}
+            };
+            const details = purchaseStylesDb.map(ps => ps.details[0]);
+            const providers = await this.providerRepository.createQueryBuilder().whereInIds(details.map(d => d.providerId)).getMany();
+            providers.forEach(p => { detailsData.providers[p.id] = p; });
+
+            const exitPorts = await this.exitPortRepository.createQueryBuilder().whereInIds(details.map(d => d.exitPortId)).getMany();
+            exitPorts.forEach(e => { detailsData.exitPorts[e.id] = e; });
+
+            const categories = await this.categoryRepository.createQueryBuilder().whereInIds(details.map(c => c.categoryId)).getMany();
+            categories.forEach(c => { detailsData.categories[c.id] = c; });
+
+            const sustainableFeatures = await this.sustainableFeatureRepository.createQueryBuilder().whereInIds(details.map(s => s.sustainableFeatureId)).getMany();
+            sustainableFeatures.forEach(s => { detailsData.sustainableFeatures[s.id] = s; });
+            
+            const seasonStickers = await this.seasonStickerRepository.createQueryBuilder().whereInIds(details.map(s => s.seasonStickerId)).getMany();
+            seasonStickers.forEach(s => { detailsData.seasonStickers[s.id] = s; });
+            
+            const shippingMethods = await this.shipmethodRepository.createQueryBuilder().whereInIds(details.map(s => s.shippingMethodId)).getMany();
+            shippingMethods.forEach(s => { detailsData.shippingMethods[s.id] = s; });
+            
+            const segments = await this.segmentRepository.createQueryBuilder().whereInIds(details.map(s => s.segmentId)).getMany();
+            segments.forEach(s => { detailsData.segments[s.id] = s; });
+            
+            const origins = await this.originCountryRepository.createQueryBuilder().whereInIds(details.map(o => o.originId)).getMany();
+            origins.forEach(o => { detailsData.origins[o.id] = o; });
+            
+            const packingMethods = await this.packagingRepository.createQueryBuilder().whereInIds(details.map(p => p.packingMethodId)).getMany();
+            packingMethods.forEach(p => { detailsData.packingMethods[p.id] = p; });
+            
+            const sizes = await this.sizeRepository.createQueryBuilder().whereInIds(details.map(s => s.sizeId)).getMany();
+            sizes.forEach(s => { detailsData.sizes[s.id] = s; });
+            
+            const ratios = await this.ratioRepository.createQueryBuilder().whereInIds(details.map(r => r.ratioId)).getMany();
+            ratios.forEach(r => { detailsData.ratios[r.id] = r; });
+            
+            const rses = await this.rseRepository.createQueryBuilder().whereInIds(details.map(r => r.rseId)).getMany();
+            rses.forEach(r => { detailsData.rses[r.id] = r; });
+            
+            const csos = await this.csoRepository.createQueryBuilder().whereInIds(details.map(c => c.csoId)).getMany();
+            csos.forEach(c => { detailsData.csos[c.id] = c; });
+
+            const usersId = purchaseStylesDb.map(p => p.details[0].brandManager).concat(purchaseStylesDb.map(p => p.details[0].productManager)).concat(purchaseStylesDb.map(p => p.details[0].designer));
+            const uniqUsersId = _.uniq(usersId.map(user => {
+                const id = parseInt(user, null);
+                return id && !isNaN(id) ? id : -1;
+            }));
+            const users = uniqUsersId && uniqUsersId.length > 0 ? await this.securityProxyService.getUsers({ ids: uniqUsersId, departments: [], roles: [] }) : null;
+            const stylesIds = Array.from(new Set(purchaseStylesDb.map(s => s.styleId)));
+
+            const piNames = _.chain(purchaseStylesDb.map(ps => ps.colors.map(c => c.shippings.map(s => s.piName)))).flatten().flatten().uniq().value();
+            const ocs = await this.ocJdaRepository.find({ where: { piname: In(piNames) } });
+
+            if (stylesIds.length > 0 && (((filter.departments && filter.departments.length > 0) || (filter.brands && filter.brands.length > 0)) || approved)) {
+                let stylesData = await this.externalStyleService.getStylesDataByIdsBatch(stylesIds);
+                if (stylesIds.length > 0 && stylesData.length === 0) {
+                    this.logger.error('Datos de estilos no encontrados');
+                    return null;
+                }
+                if (filter.brands && filter.brands.length > 0) {
+                    stylesData = stylesData.filter(s => filter.brands.indexOf(s.brandId) !== -1);
+                }
+                if (filter.departments && filter.departments.length > 0) {
+                    stylesData = stylesData.filter(s => filter.departments.indexOf(s.departmentId) !== -1);
+                }
+
+                return { purchaseStyles: purchaseStylesDb.filter(p => stylesData.map(s => s.id).indexOf(p.styleId) !== -1), stylesData, users, ocs, detailsData };
+            }
+
+            return { purchaseStyles: purchaseStylesDb, stylesData: null, users, ocs, detailsData };
+        } catch (error) {
+            this.logger.error(error);
+            return { purchaseStyles: [], stylesData: null, users: null, ocs: [], detailsData: null };
         }
     }
 
