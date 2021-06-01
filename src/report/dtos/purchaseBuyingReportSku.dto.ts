@@ -175,8 +175,8 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                         totalFob: totalQty * styleDetails.fob,
                                         dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                         importFactor: styleDetails.importFactor * 1 || 0,
-                                        imu:this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva),
-                                        imuSato:this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva),
+                                        imu:this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva).toFixed(2).toString().concat('%'),
+                                        imuSato:this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva).toFixed(2).toString().concat('%'),
                                         cost: (styleDetails.fob || 0 * styleDetails.dollarChange || 0 * styleDetails.importFactor || 0) || 0,
                                         totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * color.getTotalUnits())*(1/1) || 0, // TODO: Pending
                                         totalRetail: (styleDetails.price * totalQty)*(1/1), // TODO: Pending
