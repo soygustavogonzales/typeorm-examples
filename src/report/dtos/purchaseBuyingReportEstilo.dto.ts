@@ -58,6 +58,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
             totalFob: 'TOTAL FOB', // TODO: pending
             dollarBought: 'DOLLAR BOUGHT', // TODO: Pending,
             importFactor: 'IMPORT FACTOR', // TODO: Pending,
+            imu: 'IMU',
+            imuSato: 'IMU SATO',
             cost: 'COST', // TODO: Pending
             totalCost: 'TOTAL COST', // TODO: Pending
             totalRetail: 'TOTAL RETAIL', // TODO: Pending
@@ -166,6 +168,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 totalFob: shipping.units * styleDetails.fob,
                                 dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                 importFactor: styleDetails.importFactor * 1 || 0,
+                                imu:(this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toFixed(2).toString().concat('%'),
+                                imuSato:(this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toFixed(2).toString().concat('%'),
                                 cost: (styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) || 0,
                                 totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * shipping.units * 1.0) || 0,
                                 totalRetail: (styleDetails.price * shipping.units) * 1.0,
@@ -193,4 +197,5 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
             });
         }));
     }
+    
 }

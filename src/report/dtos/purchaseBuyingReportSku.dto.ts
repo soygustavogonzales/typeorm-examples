@@ -60,6 +60,8 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
             totalFob: 'TOTAL FOB', // TODO: pending
             dollarBought: 'DOLLAR BOUGHT', // TODO: Pending,
             importFactor: 'IMPORT FACTOR', // TODO: Pending,
+            imu: 'IMU',
+            imuSato: 'IMU SATO',
             cost: 'COST', // TODO: Pending
             totalCost: 'TOTAL COST', // TODO: Pending
             totalRetail: 'TOTAL RETAIL', // TODO: Pending
@@ -173,6 +175,8 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                         totalFob: totalQty * styleDetails.fob,
                                         dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                         importFactor: styleDetails.importFactor * 1 || 0,
+                                        imu:this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva).toFixed(2).toString().concat('%'),
+                                        imuSato:this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva).toFixed(2).toString().concat('%'),
                                         cost: (styleDetails.fob || 0 * styleDetails.dollarChange || 0 * styleDetails.importFactor || 0) || 0,
                                         totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * color.getTotalUnits())*(1/1) || 0, // TODO: Pending
                                         totalRetail: (styleDetails.price * totalQty)*(1/1), // TODO: Pending
@@ -207,4 +211,6 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
         this.dataToExport = this.dataToExport.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size !== 'SURT' && row.size !== 'TU' && row.packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && row.packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')));
         this.dataToExport = this.dataToExport.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size === 'SURT' && (row.packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || row.packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7'))));
     }
+
+
 }
