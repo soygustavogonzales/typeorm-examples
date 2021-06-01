@@ -168,8 +168,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 totalFob: shipping.units * styleDetails.fob,
                                 dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                 importFactor: styleDetails.importFactor * 1 || 0,
-                                imu:(this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toString().concat(' %'),
-                                imuSato:(this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toString().concat(' %'),
+                                imu:(this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toFixed(2).toString().concat('%'),
+                                imuSato:(this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toFixed(2).toString().concat('%'),
                                 cost: (styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) || 0,
                                 totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * shipping.units * 1.0) || 0,
                                 totalRetail: (styleDetails.price * shipping.units) * 1.0,
@@ -196,29 +196,6 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                 }
             });
         }));
-    }
-
-    protected getImu(price: number, fob: number, importFactor: number, dollarChange:number, iva:number): number {
-        // TODO: Calcular IMU en base al precio 
-        // (( price / (1 + iva ) )-  fob * this.dollarChange * importFactor) / (price / (1 + iva)) *100
-        // (( 24990 / (1 + 0.19) ) - 7.2 * 900               * 1.08        )/ (24990 / (1 + 0.19)) *100     ---->>> 66.67428
-        if (price && price !== 0 && price !== -1 && iva !== 0) {
-          const responsePrice = ((price / (1 + iva)) - fob * dollarChange * importFactor) / (price / (1 + iva));
-          return responsePrice;
-        }
-        return 0;
-        // ((PRECIO / (1 + IMPUESTO PAIS)) - FOB * DÓLAR * FACTOR DE IMPORTACION ) /(PRECIO/(1 + IMPUESTO PAIS)
-    }
-    protected getImuSato(sato: number, fob: number, importFactor: number, dollarChange:number, iva:number): number {
-        // TODO: Calcular IMUSATO en base al precio sato 
-
-        if (sato && sato !== 0 && sato !== -1 && iva !== 0) {
-            const responseSato = ((sato / (1 + iva)) - fob * dollarChange * importFactor) / (sato / (1 + iva));
-            return responseSato;
-          }
-      
-          return 0;
-        // ((PRECIO SATO/ (1 + IMPUESTO PAIS)) - FOB * DÓLAR * FACTOR DE IMPORTACION ) /(PRECIO SATO/(1 + IMPUESTO PAIS)
     }
     
 }

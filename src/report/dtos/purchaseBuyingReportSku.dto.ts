@@ -212,27 +212,5 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
         this.dataToExport = this.dataToExport.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size === 'SURT' && (row.packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || row.packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7'))));
     }
 
-    protected getImu(price: number, fob: number, importFactor: number, dollarChange:number, iva:number): number {
-        // TODO: Calcular IMU en base al precio 
-        // (( price / (1 + iva ) )-  fob * this.dollarChange * importFactor) / (price / (1 + iva)) *100
-        // (( 24990 / (1 + 0.19) ) - 7.2 * 900               * 1.08        )/ (24990 / (1 + 0.19)) *100     ---->>> 66.67428
-        // const iva = this.storeTabs[this.tabGroup.selectedIndex]?.destinyCountry.iva / 100 || 0;
-        if (price && price !== 0 && price !== -1 && iva !== 0) {
-          const responsePrice = ((price / (1 + iva)) - fob * dollarChange * importFactor) / (price / (1 + iva));
-          return responsePrice;
-        }
-        return 0;
-        // ((PRECIO / (1 + IMPUESTO PAIS)) - FOB * DÓLAR * FACTOR DE IMPORTACION ) /(PRECIO/(1 + IMPUESTO PAIS)
-    }
-    protected getImuSato(sato: number, fob: number, importFactor: number, dollarChange:number, iva:number): number {
-        // TODO: Calcular IMUSATO en base al precio sato 
 
-        if (sato && sato !== 0 && sato !== -1 && iva !== 0) {
-            const responseSato = ((sato / (1 + iva)) - fob * dollarChange * importFactor) / (sato / (1 + iva));
-            return responseSato;
-          }
-      
-          return 0;
-        // ((PRECIO SATO/ (1 + IMPUESTO PAIS)) - FOB * DÓLAR * FACTOR DE IMPORTACION ) /(PRECIO SATO/(1 + IMPUESTO PAIS)
-    }
 }
