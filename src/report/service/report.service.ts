@@ -1574,7 +1574,7 @@ export class ReportService {
                                 purchaseUserGteDivision: divisionalManager ? `${divisionalManager.firstName} ${divisionalManager.lastName}` : 'no define',
                                 conctactName: 'CONTACTO',
                                 contactEmail: 'contacto@contacto.com',
-                                chargeVolume: (units * styleData.cbm).toFixed(2).replace('.', ','), // jda required format
+                                chargeVolume: (units * styleData.cbm).toFixed(5).replace('.', ','), // jda required format
                                 measureUnit: 'M3', // M3
                                 containerType1: '',
                                 containerDesc1: '',
