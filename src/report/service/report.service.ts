@@ -248,7 +248,7 @@ export class ReportService {
                 break;
             
             case 'CompraSku':
-                reportObject = new PurchaseBuyingReportSku(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData);
+                reportObject = new PurchaseBuyingReportSku(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData, iva);
                 reportObject.reportName = 'BuyingReport_SKU';
                 break;
         
