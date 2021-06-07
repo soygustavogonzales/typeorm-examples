@@ -673,6 +673,22 @@ export class PurchaseService {
         });
     }
 
+    async _getAll(): Promise<any> {
+        const purchases = await this.purchaseRepository.createQueryBuilder('purchase')
+            .leftJoinAndSelect('purchase.stores', 'stores')
+            .leftJoinAndSelect('stores.store', 'store')
+            .leftJoinAndSelect('purchase.status', 'status')
+            .getMany();
+        const usersId = _.uniq(purchases.map(p => p.userId));
+        const users = await this.securityProxyService.getUsers({ ids: usersId, departments: [], roles: [] });
+        return purchases.map(p => {
+            const user = users.find(u => u.id === p.userId);
+            return {
+                ...p,
+            };
+        });
+    }
+
     async updateStatus(statusPurchaseDto: StatusPurchaseDto) {
         const status = await this.statusService.get(statusPurchaseDto.statusId);
         if (status) {
