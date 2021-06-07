@@ -4,7 +4,7 @@ import moment = require('moment');
 
 export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
 
-    constructor(private purchaseStyles, private stylesData, private styleSkus, private users, private ocs, private detailsData) {
+    constructor(private purchaseStyles, private stylesData, private styleSkus, private users, private ocs, private detailsData, public  iva:number) {
         super();
         this.headers = {
             status: 'STATUS',
