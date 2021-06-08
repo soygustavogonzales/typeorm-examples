@@ -42,4 +42,4 @@ patchesJson6902:
     version: v1
 images:
 - name: registry.gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
-  newTag: k8s-migration-96-c81137fb
+  newTag: k8s-migration-98-f261d50a
