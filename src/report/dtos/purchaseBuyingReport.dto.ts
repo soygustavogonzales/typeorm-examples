@@ -18,8 +18,9 @@ export abstract class PurchaseBuyingReport {
     private logger = new Logger('ReportService');
     private requestReport: RequestReport;
     private bufferFile: any;
+    public iva = 0.19;
 
-    protected abstract processData(purchaseStyles, stylesData, styleSkus, users): void;
+    protected abstract processData(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData): void;
 
     public async sendNotification(userId: number): Promise<void> {
         const notificationPublisherService = new NotificationPublisherService(this.config);
@@ -33,10 +34,6 @@ export abstract class PurchaseBuyingReport {
         };
         const publication = await notificationPublisherService.publishMessageToTopic(JSON.stringify(notification));
     }
-
-    /*protected requestReport() {
-
-    }*/
 
     public xlsxReport() {
         const workBook = XLSX.utils.book_new();
@@ -79,30 +76,27 @@ export abstract class PurchaseBuyingReport {
             )
         });
     }
-    
-    /*public async uploadReport(bufferFile = this.bufferFile) {
-        this.AWS_S3_BUCKET_NAME = this.config.get('aws').aws_s3_bucket_name;
-        AWS.config.update({
-            accessKeyId: this.config.get('aws').aws_access_key_id,
-            secretAccessKey: this.config.get('aws').aws_secret_access_key,
-        });
-        this.s3 = new AWS.S3();
-        await this.s3.putObject(
-            {
-                Bucket: this.AWS_S3_BUCKET_NAME,
-                Body: bufferFile,
-                Key: `reports/${this.reportName}`,
-                ContentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            },
-            async (error: AWS.AWSError, data: AWS.S3.PutObjectOutput) => {
-                if (error) {
-                    this.logger.error(`Error cargando el archivo de reporte: ${error}`);
-                    return '';
-                } else {
-                    const params = { Bucket: this.AWS_S3_BUCKET_NAME, Key: `reports/${this.reportName}`, Expires: 10800 }; // 3 HR
-                    this.reportUrl = this.s3.getSignedUrl('getObject', params);
-                }
-            },
-        ).promise();
-    }*/
+    public getImu(price: number, fob: number, importFactor: number, dollarChange:number, iva:number): number {
+        // TODO: Calcular IMU en base al precio 
+        // (( price / (1 + iva ) )-  fob * this.dollarChange * importFactor) / (price / (1 + iva)) *100
+        // (( 24990 / (1 + 0.19) ) - 7.2 * 900               * 1.08        )/ (24990 / (1 + 0.19)) *100     ---->>> 66.67428
+        // const iva = this.storeTabs[this.tabGroup.selectedIndex]?.destinyCountry.iva / 100 || 0;
+        if (price && price !== 0 && price !== -1 && iva !== 0) {
+          const responsePrice = ((price / (1 + iva)) - fob * dollarChange * importFactor) / (price / (1 + iva));
+          return responsePrice;
+        }
+        return 0;
+        // ((PRECIO / (1 + IMPUESTO PAIS)) - FOB * DÓLAR * FACTOR DE IMPORTACION ) /(PRECIO/(1 + IMPUESTO PAIS)
+    }
+    public getImuSato(sato: number, fob: number, importFactor: number, dollarChange:number, iva:number): number {
+        // TODO: Calcular IMUSATO en base al precio sato 
+
+        if (sato && sato !== 0 && sato !== -1 && iva !== 0) {
+            const responseSato = ((sato / (1 + iva)) - fob * dollarChange * importFactor) / (sato / (1 + iva));
+            return responseSato;
+          }
+      
+          return 0;
+        // ((PRECIO SATO/ (1 + IMPUESTO PAIS)) - FOB * DÓLAR * FACTOR DE IMPORTACION ) /(PRECIO SATO/(1 + IMPUESTO PAIS)
+    }
 }

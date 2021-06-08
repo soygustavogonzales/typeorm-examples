@@ -165,7 +165,7 @@ export class JdaskuService {
                             const sizesOk = color.skuColorSize.filter(size => size.sku).length;
                             return (sizes === sizesOk) ? 1 : 0;
                         });
-                        if (colors === colorsOk.reduce((prev, curr) => prev + curr)) {
+                        if (colors === colorsOk.reduce((prev, curr) => prev + curr, 0)) {
                             groupedStyles[groupData].stylesWSku.push(styleData.id);
                         }
                     }
@@ -352,7 +352,18 @@ export class JdaskuService {
                             ratio: parseInt(curva[idx], 10),
                         };
                     });
+
                     skuColor.skuColorSize = (await Promise.all(skuColorSize)).filter(size => size);
+                    if (!style.details.atc){
+                        const sizeJda = await this.sizeJda.findOne({ where: { jdaCode: 'M003' } });
+                        skuColor.skuColorSize.push({
+                            skuColor,
+                            sizeJda,
+                            size: style.details.size,
+                            ratio: curva.map(x => parseInt(x, 10)).reduce((a, b) => a + b),
+                        });
+                    }
+
                     return skuColor;
                 });
                 sku.skuColor = (await Promise.all(skuColors)).filter(color => color.skuColorSize.length > 0);
@@ -400,7 +411,7 @@ export class JdaskuService {
 
         return {
             indicadorSkuEstilo: 1,
-            proveedor: parseInt(sku.provider.codeJda, 10),
+            proveedor: parseInt(sku.provider?.codeJda, 10),
             departamento: parseInt(style.classTypeCode.slice(0, 3), 10),
             subDepartamento: parseInt(style.classTypeCode.slice(3, 6), 10),
             clase: parseInt(style.classTypeCode.slice(6, 9), 10),

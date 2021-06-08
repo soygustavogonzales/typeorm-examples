@@ -27,6 +27,7 @@ import { PurchaseBuyingReportEstilo } from '../dtos/purchaseBuyingReportEstilo.d
 import { PurchaseBuyingReport } from '../dtos/purchaseBuyingReport.dto';
 import { PurchaseBuyingReportSku } from '../dtos/purchaseBuyingReportSku.dto';
 import { PurchaseStyle } from '../../entities/purchaseStyle.entity';
+import { StoreService } from '../../store/service/store.service';
 @Injectable()
 export class ReportService {
     private logger = new Logger('ReportService');
@@ -49,6 +50,7 @@ export class ReportService {
         private notificationPublisherService: NotificationPublisherService,
         @InjectRepository(PurchaseStyle)
         private readonly purchaseStyleRepository: Repository<PurchaseStyle>,
+        private storeService: StoreService,
         ) {
         this.AWS_S3_BUCKET_NAME = this.config.get('aws').aws_s3_bucket_name;
         AWS.config.update({
@@ -131,42 +133,47 @@ export class ReportService {
                 const skuColor = sku?.skuColor.find(skuColor => skuColor.styleColorId === colorData.id);
                 if (styleData && styleDetails && colorData && skuColor) {
                     for (const colorSize of skuColor.skuColorSize) {
-                        for (const shipping of color.shippings) {
-                            const unitsPerInner = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b);
-                            const totalQty = (shipping.units/unitsPerInner)*colorSize.ratio;
-                            dataToExportSku.push({
-                                department: styleData.departmentCode,
-                                styleCode: styleData.code,
-                                ean: colorSize.ean,
-                                sku: colorSize.sku,
-                                description: `${styleData.code} ${styleData.articleType}`,
-                                color: colorData.colorShortName,
-                                size: colorSize.sizeJda?.shortName || 'N/A',
-                                totalQty: totalQty,
-                                price: styleDetails.price,
-                                sato: styleDetails.sato,
-                                piNumber: shipping.piName,
-                                atcId: (purchaseStyle.purchaseStore.store.shortName !== 'PW' && 
-                                        purchaseStyle.purchaseStore.store.shortName !== 'TP') ? colorSize.atc : '',
-                                ratio: colorSize.ratio,
-                                provider: styleDetails.provider.name,
-                                lsd: moment(shipping.date).format('DD-MMM-yyyy'),
-                                unit: purchaseStyle.purchaseStore.store.name,
-                                skuSyncDate: colorSize.datejda,
-                                ocJda: shipping['oc'].map(oc => oc.ponumb).join('/'),
-                                impNum: shipping['oc'][0] ? `${purchaseStyle.purchaseStore.store.impnumpfx}${shipping['oc'][0].poedat.toString().substring(0, 4)}${shipping['oc'][0].ponumb}` : null,
-                            });
+
+                        const size = colorSize.sizeJda?.shortName || 'N/A';
+                        const atcId = (purchaseStyle.purchaseStore.store.shortName !== 'PW' && purchaseStyle.purchaseStore.store.shortName !== 'TP') ? colorSize.atc : '';
+                        const unit = purchaseStyle.purchaseStore.store.name;
+                        const packingMethod = styleDetails.packingMethod.name;
+
+                        if (!((unit === 'PARIS E-COMMERCE' || unit === 'TIENDAS PROPIAS') && size === 'SURT') &&
+                            !(unit === 'PARIS' && styleDetails.atc && size === 'SURT') &&
+                            !(unit === 'PARIS' && !styleDetails.atc && (size !== 'SURT' && size !== 'TU' && packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')) &&
+                            !(unit === 'PARIS' && !styleDetails.atc && (size === 'SURT' && (packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7')))) {
+                              
+                            for (const shipping of color.shippings) {
+                                const unitsPerInner = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b);
+                                const totalQty = (shipping.units / unitsPerInner) * colorSize.ratio;
+                                dataToExportSku.push({
+                                    department: styleData.departmentCode,
+                                    styleCode: styleData.code,
+                                    ean: colorSize.ean,
+                                    sku: colorSize.sku,
+                                    description: `${styleData.code} ${styleData.articleType}`,
+                                    color: colorData.colorShortName,
+                                    size,
+                                    totalQty: totalQty,
+                                    price: styleDetails.price,
+                                    sato: styleDetails.sato,
+                                    piNumber: shipping.piName,
+                                    atcId,
+                                    ratio: colorSize.ratio,
+                                    provider: styleDetails.provider.name,
+                                    lsd: moment(shipping.date).format('DD-MMM-yyyy'),
+                                    unit,
+                                    skuSyncDate: colorSize.datejda,
+                                    ocJda: shipping['oc'].map(oc => oc.ponumb).join('/'),
+                                    impNum: shipping['oc'][0] ? `${purchaseStyle.purchaseStore.store.impnumpfx}${shipping['oc'][0].poedat.toString().substring(0, 4)}${shipping['oc'][0].ponumb}` : null,
+                                });
+                            }
                         }
                     }
                 }
-
             });
         }));
-
-        dataToExportSku = dataToExportSku.filter(row => !((row.unit === 'PARIS E-COMMERCE' || row.unit === 'TIENDAS PROPIAS') && row.size === 'SURT'));
-        dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId != '' && row.size === 'SURT'));
-        dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size !== 'SURT' && row.size !== 'TU' && row.packingMethod !== 'GOH / SOLID COLOR / SOLID SIZE|6' && row.packingMethod !== 'GOH/SOLID COLOR/ASSORTED SIZE|7')));
-        dataToExportSku = dataToExportSku.filter(row => !(row.unit === 'PARIS' && row.atcId == '' && (row.size === 'SURT' && (row.packingMethod === 'GOH / SOLID COLOR / SOLID SIZE|6' || row.packingMethod === 'GOH/SOLID COLOR/ASSORTED SIZE|7'))));
 
         /* make the worksheet */
         const ws = XLSX.utils.json_to_sheet([headersSku, ...dataToExportSku], { skipHeader: true });
@@ -208,7 +215,7 @@ export class ReportService {
         const subscriptionId = dto.subscriptionId;
         const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.Approvement });
         await this.requestReporRepository.save(requestReport);
-        const { purchaseStyles, stylesData, users } = await this.purchaseStyleService.getPurchaseStylesByFilter(dto, StatusPurchaseColorEnum.ConfirmedOrCanceled, true);
+        const { purchaseStyles, stylesData, users, ocs, detailsData } = await this.purchaseStyleService.getPurchaseStylesByFilterV1(dto, StatusPurchaseColorEnum.ConfirmedOrCanceled, true);
 
         if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
             requestReport.status = 'No Data';
@@ -231,12 +238,12 @@ export class ReportService {
         let reportObject: PurchaseBuyingReport;
         switch (dto.level) {
             case 'CompraEstilo':
-                reportObject = new PurchaseBuyingReportEstilo(this.purchaseStyleRepository, purchaseStyles, stylesData, styleSkus, users, userId);
+                reportObject = new PurchaseBuyingReportEstilo(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData);
                 reportObject.reportName = 'BuyingReport_Estilo';
                 break;
             
             case 'CompraSku':
-                reportObject = new PurchaseBuyingReportSku(purchaseStyles, stylesData, styleSkus, users, userId);
+                reportObject = new PurchaseBuyingReportSku(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData);
                 reportObject.reportName = 'BuyingReport_SKU';
                 break;
         
@@ -279,7 +286,6 @@ export class ReportService {
         purchaseStyles.map(purchaseStyle => {
             purchaseStyle.colors.map(color => {
                 const styleData = stylesData.find(s => s.id === purchaseStyle.styleId);
-                console.log('styleData >>',styleData);
                 const styleDetails = purchaseStyle.details[0]; // TODO: filter by detail type
                 const colorData = styleData.colors.find(c => c.id === color.styleColorId);
                 if (styleData && styleDetails && colorData) {
@@ -1480,7 +1486,7 @@ export class ReportService {
                 styleId: p.styleId,
                 styleColorId: c.styleColorId,
                 userId: p.purchaseStore.purchase.userId,
-                localCode: p.purchaseStore.store.localCode,
+                store: p.purchaseStore.store,
                 // details: p.details[0],
                 ratio: p.details[0].ratio.ratio,
                 providerId: p.details[0].provider.id,
@@ -1504,6 +1510,8 @@ export class ReportService {
             const paymentTerms = await this.paymentTermsProxyService.getAll();
             const response = [];
     
+            const tpStore = await this.storeService.getByShortName('TP');
+            const brandJdaCodes = ['FOSTER','LEGACY','UMBRAL','UMBRBE','UWOMAN','JJO'];
             for (const piName of Object.keys(shippingsGrouped)) {
                 const stylesShippings = shippingsGrouped[piName];
                 const styleProviderNameReference = stylesShippings[0].providerName;
@@ -1532,13 +1540,23 @@ export class ReportService {
                         this.logger.debug(`styleId ${style.styleId} and providerId ${style.providerId} doesn't match with any SKU`, 'generatePurchaseOrder');
                     }
                     const skuColor = sku?.skuColor.find(color => color.styleColorId === style.styleColorId);
+                    
+                    let channel = 1;
+                    let localCode = style.store.localCode;
+                    if (tpStore && tpStore.length > 0 && style.store.shortName === 'PW' && brandJdaCodes.filter(c => c === styleData.brandJdaCode).length > 0) {
+                        localCode = _.first(tpStore)?.localCode;
+                        channel = 4;
+                    }
+                    if (style.store.shortName === 'TP') {
+                        channel = 4;
+                    }
                     if (skuColor) {
                         return skuColor.skuColorSize.map(skuColorSize => {
                             if (skuColorSize) {
                             const units = (totalUnits/sumRatio)*skuColorSize.ratio;
                             return {
-                                channel: 1,
-                                localCode: style.localCode,
+                                channel,
+                                localCode,
                                 providerJdaCode: style.providerJdaCode,
                                 sku: skuColorSize.sku,
                                 ean: '',
@@ -1556,7 +1574,7 @@ export class ReportService {
                                 purchaseUserGteDivision: divisionalManager ? `${divisionalManager.firstName} ${divisionalManager.lastName}` : 'no define',
                                 conctactName: 'CONTACTO',
                                 contactEmail: 'contacto@contacto.com',
-                                chargeVolume: (units * styleData.cbm).toFixed(2).replace('.', ','), // jda required format
+                                chargeVolume: (units * styleData.cbm).toFixed(5).replace('.', ','), // jda required format
                                 measureUnit: 'M3', // M3
                                 containerType1: '',
                                 containerDesc1: '',

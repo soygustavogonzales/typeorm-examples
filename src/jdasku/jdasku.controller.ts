@@ -16,7 +16,6 @@ import { SkuSummaryGroup } from './dtos/skuSummaryGroup.dto';
 @ApiSecurity('api_key')
 @UseGuards(ComposeGuard)
 export class JdaskuController {
-
     constructor(private jdaskuService: JdaskuService, private jdaskusyncService: JdaskusyncService) { }
 
     @Post()
