@@ -880,7 +880,7 @@ export class ReportService {
                         rowData.size_ratio = styleDetails.ratio.ratio;
                         rowData.qtyXInner = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b); // calculate by ratio,
                         rowData.qtyXMaster = styleData.divisionMaster;
-                        rowData.color_name = colorData.colorName;
+                        rowData.color_name = colorData?.colorName || '';
                         rowData.orderQtys = 0;
                         _.forEach(ratio, (r, k) => {
                             rowData[`size${k + 1}`] = Math.round((currentShipping.units * r) / rowData.qtyXInner);
