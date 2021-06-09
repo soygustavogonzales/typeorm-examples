@@ -1,6 +1,9 @@
-import { Controller, Post, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { ComposeGuard } from '../shared/guards/auth.guard';
+import { JdaOcDto } from './dtos/jdaoc.dto';
+import { JdaOcFilterDto } from './dtos/jdaocFilter.dto';
+import { JdaOcService } from './service/jdaoc.service';
 import { JdaOcSyncService } from './service/jdaocsync.service';
 
 @Controller('jdaoc')
@@ -9,7 +12,8 @@ import { JdaOcSyncService } from './service/jdaocsync.service';
 @ApiSecurity('api_key')
 @UseGuards(ComposeGuard)
 export class JdaocController {
-    constructor(private jdaskusyncService: JdaOcSyncService){ }
+    constructor(private jdaskusyncService: JdaOcSyncService,
+        private jdaocService: JdaOcService) { }
 
     @Post('jdasync')
     @ApiOkResponse({
@@ -25,5 +29,21 @@ export class JdaocController {
     })
     async jdaOcResync(@Param('piName') piName: string): Promise<any> {
         return await this.jdaskusyncService.jdaOcResync(piName);
+    }
+
+    @Get('jdaoc-numbers')
+    @ApiOkResponse({
+        description: 'Servicio para obtener los números de ordenes de compra',
+    })
+    async jdaOcNumbers(): Promise<string[]> {
+        return await this.jdaocService.jdaOcNumbers();
+    }
+
+    @Post('jdaoc-by-filter')
+    @ApiOkResponse({
+        description: 'Servicio para obtener las ordenes de compra por filtro',
+    })
+    async jdaOcByFilter(@Body() filter: JdaOcFilterDto): Promise<JdaOcDto[]> {
+        return await this.jdaocService.jdaOcByFilter(filter);
     }
 }
