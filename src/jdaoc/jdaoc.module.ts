@@ -6,13 +6,15 @@ import { Purchase } from '../entities/purchase.entity';
 import { OcJda } from '../entities/ocJda.entity';
 import { SharedModule } from '../shared/shared.module';
 import { JdaOcSyncService } from './service/jdaocsync.service';
+import { JdaOcService } from './service/jdaoc.service';
+import { Provider } from '../entities/provider.entity';
 
 @Module({
-  imports: [ExternalServicesModule, TypeOrmModule.forFeature(
-    [Purchase, OcJda]), SharedModule],
+  imports: [ExternalServicesModule, TypeOrmModule.forFeature([Purchase, OcJda, Provider
+  ]), SharedModule],
   controllers: [JdaocController],
-  providers: [JdaOcSyncService],
-  exports: [JdaOcSyncService, TypeOrmModule.forFeature(
-    [OcJda])]
+  providers: [JdaOcSyncService, JdaOcService],
+  exports: [JdaOcSyncService, JdaOcService,
+    TypeOrmModule.forFeature([OcJda])]
 })
 export class JdaOcModule { }

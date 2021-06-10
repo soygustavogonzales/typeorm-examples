@@ -88,7 +88,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
         _.flatten(purchaseStyles.map(purchaseStyle => {
             return purchaseStyle.colors.map(color => {
                 const styleData = stylesData.find(s => s.id === purchaseStyle.styleId);
-                const styleDetails = purchaseStyle.details[0];                
+                const styleDetails = purchaseStyle.details[0];
+                const destinyCountry = purchaseStyle.purchaseStore.store.destinyCountry;         
                 if (styleData && styleDetails) {
                     const colorData = styleData.colors.find(c => c.id === color.styleColorId);                    
                     if (colorData) {
@@ -129,7 +130,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 providerCode: detailsData.providers[styleDetails.providerId]?.codeJda || '',
                                 provider: detailsData.providers[styleDetails.providerId]?.name || '',
                                 cso: detailsData.csos[styleDetails.csoId]?.name || '',
-                                brand: styleData.brand,
+                                brand: destinyCountry.shortName === 'PE' && styleData.brand.toUpperCase() === 'MELT' ? 'AUSSIE' : styleData.brand,
                                 styleCode: styleData.code,
                                 sku: referentialSku?.sku || '',
                                 atcId: (purchaseStyle.purchaseStore.store.shortName !== 'PW' &&
@@ -177,7 +178,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 productManager,
                                 designer,
                                 piNumber: shipping.piName,
-                                country: purchaseStyle.purchaseStore.store.destinyCountry.name,
+                                country: destinyCountry.name,
                                 sticker: detailsData.seasonStickers[styleDetails.seasonStickerId]?.name || '',
                                 internetDescription: styleDetails.internetDescription,
                                 segment: detailsData.segments[styleDetails.segmentId]?.name || '',
