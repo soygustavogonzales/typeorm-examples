@@ -63,6 +63,7 @@ import { TypeormHelper } from '../../shared/class/typeorm.helper';
 import { PurchaseStore } from '../../entities/purchaseStore.entity';
 import { Store } from '../../entities/store.entity';
 import { SustainableFeature } from '../../entities/sustainableFeature.entity';
+import { Exhibition } from '../../entities/exhibition.entity';
 
 @Injectable()
 export class PurchaseStyleService {
@@ -105,6 +106,8 @@ export class PurchaseStyleService {
         private readonly categoryRepository: Repository<Category>,
         @InjectRepository(SustainableFeature)
         private readonly sustainableFeatureRepository: Repository<SustainableFeature>,
+        @InjectRepository(Exhibition)
+        private readonly exhibitionRepository: Repository<Exhibition>,
         @InjectRepository(SeasonSticker)
         private readonly seasonStickerRepository: Repository<SeasonSticker>,
         @InjectRepository(Shipmethod)
@@ -376,6 +379,7 @@ export class PurchaseStyleService {
                 .leftJoinAndSelect('details.provider', 'provider')
                 .leftJoinAndSelect('details.origin', 'origin')
                 .leftJoinAndSelect('details.packingMethod', 'packingMethod')
+                .leftJoinAndSelect('details.exhibition', 'exhibition')
                 .leftJoinAndSelect('details.exitPort', 'exitPort')
                 .leftJoinAndSelect('details.size', 'size')
                 .leftJoinAndSelect('details.ratio', 'ratio')
@@ -675,6 +679,7 @@ export class PurchaseStyleService {
                 segments: {},
                 origins: {},
                 packingMethods: {},
+                exhibitions: {},
                 sizes: {},
                 ratios: {},
                 rses: {},
@@ -707,6 +712,9 @@ export class PurchaseStyleService {
             
             const packingMethods = await this.packagingRepository.createQueryBuilder().whereInIds(details.map(p => p.packingMethodId)).getMany();
             packingMethods.forEach(p => { detailsData.packingMethods[p.id] = p; });
+
+            const exhibitions = await this.exhibitionRepository.createQueryBuilder().whereInIds(details.map(s => s.exhibitionId)).getMany();
+            exhibitions.forEach(s => { detailsData.exhibitions[s.id] = s; });
             
             const sizes = await this.sizeRepository.createQueryBuilder().whereInIds(details.map(s => s.sizeId)).getMany();
             sizes.forEach(s => { detailsData.sizes[s.id] = s; });

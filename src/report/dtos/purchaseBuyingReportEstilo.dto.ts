@@ -36,6 +36,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
             ratio: 'RATIO', // add to join,
             size: 'SIZE', // add to join
             packingMethod: 'PACKING METHOD',
+            exhibition: 'EXHIBITION',
             hanger: 'HANGER',
             vstTag: 'VST TAG',
             atc: 'ATC',
@@ -147,6 +148,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 ratio: detailsData.ratios[styleDetails.ratioId]?.ratio || '',
                                 size: detailsData.sizes[styleDetails.sizeId]?.size || '',
                                 packingMethod: detailsData.packingMethods[styleDetails.packingMethodId]?.name || '',
+                                exhibition: detailsData.exhibitions[styleDetails.exhibitionId]?.name || '',
                                 hanger: styleDetails.hanger ? 'YES' : 'NO',
                                 vstTag: styleDetails.vstTag ? 'YES' : 'NO',
                                 atc: styleDetails.atc ? 'YES' : 'NO',

@@ -14,7 +14,7 @@ import { Cso } from './cso.entity';
 import { ExitPort } from './exitPort.entity';
 import { PurchaseStyleNegotiation } from './purchaseStyleNegotiation.entity';
 import { SustainableFeature } from './sustainableFeature.entity';
-
+import { Exhibition } from './exhibition.entity';
 @Entity()
 export class PurchaseStyleDetails {
     @PrimaryGeneratedColumn()
@@ -166,6 +166,11 @@ export class PurchaseStyleDetails {
     packingMethodId: number;
     @ManyToOne(() => Packaging, { nullable: true })
     packingMethod: Packaging;
+
+    @Column({ nullable: true })
+    exhibitionId: number;
+    @ManyToOne(() => Exhibition, { nullable: true })
+    exhibition: Exhibition;
 
     @Column({ nullable: true })
     categoryId: number;

@@ -39,6 +39,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
             size: 'SIZE', // add to join
             sizeId: 'SIZE ID',
             packingMethod: 'PACKING METHOD',
+            exhibition: 'EXHIBITION',
             hanger: 'HANGER',
             vstTag: 'VST TAG',
             unitsPerInner: 'UNITS PER INNER', // calculate by ratio,
@@ -155,6 +156,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                         size: colorSize.sizeJda?.shortName || 'N/A',
                                         sizeId: colorSize.sizeJda?.jdaCode || 'N/A',
                                         packingMethod: detailsData.packingMethods[styleDetails.packingMethodId]?.name || '',
+                                        exhibition: detailsData.exhibitions[styleDetails.exhibitionId]?.name || '',
                                         hanger: styleDetails.hanger ? 'YES' : 'NO',
                                         vstTag: styleDetails.vstTag ? 'YES' : 'NO',
                                         unitsPerInner: unitsPerInner,
