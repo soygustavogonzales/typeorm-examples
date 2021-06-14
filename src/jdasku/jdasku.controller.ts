@@ -57,6 +57,8 @@ export class JdaskuController {
         description: 'Servicio para limpiar skus de forma masiva',
     })
     async cleanMany(@Body() dto: CleanSkuDto): Promise<ResponseApi<boolean>> {
+        console.log('cleanSku invoked');
+        console.log(dto);
         const { styles, cleanCause, user } = dto;
         await this.jdaskuService.cleanSkus(styles, cleanCause, user);
         return { status: 200, data: true };
