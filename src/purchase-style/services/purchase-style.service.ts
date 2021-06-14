@@ -379,7 +379,6 @@ export class PurchaseStyleService {
                 .leftJoinAndSelect('details.provider', 'provider')
                 .leftJoinAndSelect('details.origin', 'origin')
                 .leftJoinAndSelect('details.packingMethod', 'packingMethod')
-                .leftJoinAndSelect('details.exhibition', 'exhibition')
                 .leftJoinAndSelect('details.exitPort', 'exitPort')
                 .leftJoinAndSelect('details.size', 'size')
                 .leftJoinAndSelect('details.ratio', 'ratio')
