@@ -28,6 +28,7 @@ import { PurchaseBuyingReport } from '../dtos/purchaseBuyingReport.dto';
 import { PurchaseBuyingReportSku } from '../dtos/purchaseBuyingReportSku.dto';
 import { PurchaseStyle } from '../../entities/purchaseStyle.entity';
 import { StoreService } from '../../store/service/store.service';
+
 @Injectable()
 export class ReportService {
     private logger = new Logger('ReportService');
@@ -234,7 +235,6 @@ export class ReportService {
             this.logger.error(`Cambio de dollar no econtrado para las temporadas ${seasonCommercialIds.join(',')}`);
             return null;
         }
-
         let reportObject: PurchaseBuyingReport;
         switch (dto.level) {
             case 'CompraEstilo':
@@ -1473,7 +1473,6 @@ export class ReportService {
             // const body : generateArrivalDatesDto = {
             //     purchaseStyleIds: purchaseStyles.map(ps => ps.id)
             // }
-            // const purchaseStyleColorShippments = await this.purchaseService.updateArrivalDates(body);
     
             if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
                 const requestReport = this.getNewRequestReport({ status: 'No Data', url: '', name: '', subscriptionId, userId, reportType: ReportType.PurchaseOrder });
