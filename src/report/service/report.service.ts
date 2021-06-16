@@ -28,7 +28,6 @@ import { PurchaseBuyingReport } from '../dtos/purchaseBuyingReport.dto';
 import { PurchaseBuyingReportSku } from '../dtos/purchaseBuyingReportSku.dto';
 import { PurchaseStyle } from '../../entities/purchaseStyle.entity';
 import { StoreService } from '../../store/service/store.service';
-import {PurchaseService} from '../../purchase/service/purchase.service';
 
 @Injectable()
 export class ReportService {
@@ -53,7 +52,6 @@ export class ReportService {
         @InjectRepository(PurchaseStyle)
         private readonly purchaseStyleRepository: Repository<PurchaseStyle>,
         private storeService: StoreService,
-        private purchaseService: PurchaseService
         ) {
         this.AWS_S3_BUCKET_NAME = this.config.get('aws').aws_s3_bucket_name;
         AWS.config.update({
@@ -237,9 +235,6 @@ export class ReportService {
             this.logger.error(`Cambio de dollar no econtrado para las temporadas ${seasonCommercialIds.join(',')}`);
             return null;
         }
-        //const purchase = await  this.purchaseService._getAll();
-        //const iva = purchase?.stores.map(s => s.store.destinyCountry.iva)[0] / 100;
-        //console.log(iva)
         let reportObject: PurchaseBuyingReport;
         switch (dto.level) {
             case 'CompraEstilo':
@@ -1478,7 +1473,6 @@ export class ReportService {
             // const body : generateArrivalDatesDto = {
             //     purchaseStyleIds: purchaseStyles.map(ps => ps.id)
             // }
-            // const purchaseStyleColorShippments = await this.purchaseService.updateArrivalDates(body);
     
             if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
                 const requestReport = this.getNewRequestReport({ status: 'No Data', url: '', name: '', subscriptionId, userId, reportType: ReportType.PurchaseOrder });
