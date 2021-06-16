@@ -116,7 +116,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                         for (const shipping of color.shippings.filter(s => s.units > 0)) {
                             const shippingOcs = ocs.filter(o => o.piname === shipping.piName);
                             const cbm = parseFloat(styleData.cbm).toFixed(4);
-                            const iva = purchaseStyle.purchaseStore.store.destinyCountry.iva;
+                            const iva = (purchaseStyle.purchaseStore.store.destinyCountry.iva)/100;
+                            console.log('iva>>',iva)
                             this.dataToExport.push({
                                 status: color.status.name,
                                 season: purchaseStyle.purchaseStore.purchase.seasonCommercial.name,

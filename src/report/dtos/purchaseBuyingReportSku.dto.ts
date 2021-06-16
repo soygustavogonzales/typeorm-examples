@@ -121,7 +121,8 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                     const unitsPerInner = detailsData.ratios[styleDetails.ratioId]?.ratio ? detailsData.ratios[styleDetails.ratioId]?.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b) : 0;
                                     const totalQty = (shipping.units / unitsPerInner) * colorSize.ratio;
                                     const cbm = parseFloat(styleData.cbm).toFixed(4);
-                                    const iva = purchaseStyle.purchaseStore.store.destinyCountry.iva;
+                                    const iva = (purchaseStyle.purchaseStore.store.destinyCountry.iva)/100; //el iva viene como numero entero, no en decimales: 19, 18, etc
+                                    console.log('iva>>',iva)
                                     this.dataToExport.push({
                                         status: color.status.name,
                                         season: purchaseStyle.purchaseStore.purchase.seasonCommercial.name,
