@@ -673,16 +673,6 @@ export class PurchaseService {
         });
     }
 
-    async getPurchaseStoreById(purchaseStoreId:number): Promise<any> {
-        return await this.purchaseStoreRepository.createQueryBuilder('purchaseStore')
-            .leftJoinAndSelect('purchaseStore.store', 'pstore')
-            .leftJoinAndSelect('pstore.store', 'store')
-            .leftJoinAndSelect('store.destinyCountry', 'destinyCountry')
-            .where('purchaseStore.id =:id',{id:purchaseStoreId})
-            .getOne();
-
-    }
-
     async updateStatus(statusPurchaseDto: StatusPurchaseDto) {
         const status = await this.statusService.get(statusPurchaseDto.statusId);
         if (status) {
