@@ -11,11 +11,11 @@ export class JdaOcFilterDto {
   departments: number[];
 
   @ApiProperty({
-    description: 'Ids de proveedores',
+    description: 'JdaCodes de proveedores',
     example: [],
     isArray: true,
   })
-  providers: number[];
+  providers: string[];
 
   @ApiProperty({
     description: 'Ids de ordenes de compras',

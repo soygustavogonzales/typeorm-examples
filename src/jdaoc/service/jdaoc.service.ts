@@ -57,8 +57,7 @@ export class JdaOcService {
                 sqlQuery += ` AND p.PONUMB IN (${filter.ocs.join(',')})`;
             }
             if (filter.providers && filter.providers.length > 0) {
-                const providers = await this.providerRepository.findByIds(filter.providers);
-                const providersCodes = providers.map(p => `'${p.codeJda}'`);
+                const providersCodes = filter.providers.map(p => `'${p}'`);
                 if (providersCodes.length > 0) {
                     sqlQuery += ` AND p.POVNUM IN (${providersCodes.join(',')})`;
                 }
@@ -77,12 +76,33 @@ export class JdaOcService {
             const ocs = await this.pool.query(sqlQuery);
             if (ocs.length === 0) { return []; } 
 
+            const ocNumbers = _.uniq(ocs.map(o => o.PONUMB));
+            sqlQuery = `SELECT PONUMB, IFNULL(ROUND(((RETAIL_I-(COSTO_I * 1.19))/RETAIL_I) * 100),ROUND(((RETAIL_II-(COSTO_II * 1.19))/RETAIL_II) * 100))
+                        AS MARGEN, IFNULL (RETAIL_I,retail_II) AS VTA_RTL, IFNULL (COSTO_I ,COSTO_II) AS COSTO
+                        FROM (SELECT PONUMB,
+                            (SELECT SUM ((CASE 
+                                WHEN ZEVRTO = 0 THEN ZEVRTR 
+                                ELSE ZEVRTO END ) * D.POMQTY) AS PRECIO   FROM MMSP4LIB.POMZEV Z 
+                                INNER JOIN  MMSP4LIB.POMDTL D ON  Z.ZEVNPO = D.PONUMB AND Z.ZEVSKU = D.INUMBR WHERE Z.ZEVNPO = H.PONUMB ) AS RETAIL_I,
+                            (SELECT SUM ((D.POBCST - D.POBALW) * D.POMQTY) AS COSTO   FROM  MMSP4LIB.POMDTL D  WHERE D.PONUMB = H.PONUMB ) AS COSTO_I, 
+                            (SELECT SUM ((CASE 
+                            WHEN ZEVRTO = 0 THEN ZEVRTR 
+                            ELSE ZEVRTO END ) * C.PCSQTY) AS PRECIO   FROM MMSP4LIB.POMZEV Z 
+                            INNER JOIN  MMSP4LIB.POMCSD C ON  Z.ZEVNPO = C.PONUMB AND Z.ZEVSTY = C.PCSSTY  AND C.PCSTYP = 2 WHERE Z.ZEVNPO = H.PONUMB ) AS RETAIL_II,
+                            (SELECT SUM ((C.PCSBCS - C.PCSBAW) * C.PCSQTY) AS COSTO   FROM  MMSP4LIB.POMCSD C  WHERE C.PONUMB = H.PONUMB AND C.PCSTYP = 2) AS COSTO_II
+                        FROM MMSP4LIB.POMHDR H
+                        WHERE H.POSTAT = '2' AND H.POMUS1 <> '' AND H.PONUMB IN (${ocNumbers.join(',')}))`;
+
+            const rates = {};
+            const ocRates = await this.pool.query(sqlQuery);
+            ocRates.forEach(item => { rates[item.PONUMB] = item.MARGEN; });
+
+            const departments = {};
             const departmentJdaCodes = _.uniq(ocs.map(o => o.PODPT));
             const responseDepartments = await this.styleService.getDepartmentsByCodeDepartmentCountry(departmentJdaCodes);
+            responseDepartments.forEach(item => { departments[item.codeChile] = item.name; });
 
             return ocs.map(oc => {
-                const department = responseDepartments.find(d => d.codeChile == oc.PODPT)?.name || '';
-
                 let distributionType = '';
                 if (oc.POMTYP && oc.POMTYP === 'S') {
                     distributionType = 'STOCK';
@@ -94,12 +114,12 @@ export class JdaOcService {
                     ocNumber: oc.PONUMB,
                     provider: oc.AANAME,
                     destinationWinery: oc.POSTOR,
-                    department,
+                    department: departments[oc.PODPT] || '',
                     creationDate: moment(oc.POEDAT, 'YYMMDD').toDate(),
                     totalCost: oc.POCOST,
                     totalRetail: oc.PORETL,
                     totalUnits: oc.POUNTS,
-                    conversionRate: 1,
+                    conversionRate: rates[oc.PONUMB] || 0,
                     distributionType
                 }
             });
