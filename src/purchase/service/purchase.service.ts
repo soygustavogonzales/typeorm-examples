@@ -673,20 +673,14 @@ export class PurchaseService {
         });
     }
 
-    async _getAll(): Promise<any> {
-        const purchases = await this.purchaseRepository.createQueryBuilder('purchase')
-            .leftJoinAndSelect('purchase.stores', 'stores')
-            .leftJoinAndSelect('stores.store', 'store')
-            .leftJoinAndSelect('purchase.status', 'status')
-            .getMany();
-        const usersId = _.uniq(purchases.map(p => p.userId));
-        const users = await this.securityProxyService.getUsers({ ids: usersId, departments: [], roles: [] });
-        return purchases.map(p => {
-            const user = users.find(u => u.id === p.userId);
-            return {
-                ...p,
-            };
-        });
+    async getPurchaseStoreById(purchaseStoreId:number): Promise<any> {
+        return await this.purchaseStoreRepository.createQueryBuilder('purchaseStore')
+            .leftJoinAndSelect('purchaseStore.store', 'pstore')
+            .leftJoinAndSelect('pstore.store', 'store')
+            .leftJoinAndSelect('store.destinyCountry', 'destinyCountry')
+            .where('purchaseStore.id =:id',{id:purchaseStoreId})
+            .getOne();
+
     }
 
     async updateStatus(statusPurchaseDto: StatusPurchaseDto) {

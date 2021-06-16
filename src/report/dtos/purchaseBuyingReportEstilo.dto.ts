@@ -4,7 +4,7 @@ import moment = require('moment');
 
 export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
 
-    constructor(private purchaseStyles, private stylesData, private styleSkus, private users, private ocs, private detailsData,public  iva:number) {
+    constructor(private purchaseStyles, private stylesData, private styleSkus, private users, private ocs, private detailsData) {
         super();
         this.headers = {
             status: 'STATUS',
@@ -116,6 +116,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                         for (const shipping of color.shippings.filter(s => s.units > 0)) {
                             const shippingOcs = ocs.filter(o => o.piname === shipping.piName);
                             const cbm = parseFloat(styleData.cbm).toFixed(4);
+                            const iva = purchaseStyle.purchaseStore.store.destinyCountry.iva;
+                            console.log('iva >> ',iva)
                             this.dataToExport.push({
                                 status: color.status.name,
                                 season: purchaseStyle.purchaseStore.purchase.seasonCommercial.name,
@@ -169,8 +171,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 totalFob: shipping.units * styleDetails.fob,
                                 dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                 importFactor: styleDetails.importFactor * 1 || 0,
-                                imu:(this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toFixed(2).toString().concat('%'),
-                                imuSato:(this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toFixed(2).toString().concat('%'),
+                                imu:(this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,iva)*100).toFixed(2).toString().concat('%'),
+                                imuSato:(this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,iva)*100).toFixed(2).toString().concat('%'),
                                 cost: (styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) || 0,
                                 totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * shipping.units * 1.0) || 0,
                                 totalRetail: (styleDetails.price * shipping.units) * 1.0,

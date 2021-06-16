@@ -237,18 +237,18 @@ export class ReportService {
             this.logger.error(`Cambio de dollar no econtrado para las temporadas ${seasonCommercialIds.join(',')}`);
             return null;
         }
-        const purchase = await  this.purchaseService._getAll();
-        const iva = purchase?.stores.map(s => s.store.destinyCountry.iva)[0] / 100;
+        //const purchase = await  this.purchaseService._getAll();
+        //const iva = purchase?.stores.map(s => s.store.destinyCountry.iva)[0] / 100;
         //console.log(iva)
         let reportObject: PurchaseBuyingReport;
         switch (dto.level) {
             case 'CompraEstilo':
-                reportObject = new PurchaseBuyingReportEstilo(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData, iva);
+                reportObject = new PurchaseBuyingReportEstilo(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData);
                 reportObject.reportName = 'BuyingReport_Estilo';
                 break;
             
             case 'CompraSku':
-                reportObject = new PurchaseBuyingReportSku(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData, iva);
+                reportObject = new PurchaseBuyingReportSku(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData);
                 reportObject.reportName = 'BuyingReport_SKU';
                 break;
         

@@ -4,7 +4,7 @@ import moment = require('moment');
 
 export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
 
-    constructor(private purchaseStyles, private stylesData, private styleSkus, private users, private ocs, private detailsData, public  iva:number) {
+    constructor(private purchaseStyles, private stylesData, private styleSkus, private users, private ocs, private detailsData) {
         super();
         this.headers = {
             status: 'STATUS',
@@ -121,6 +121,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                     const unitsPerInner = detailsData.ratios[styleDetails.ratioId]?.ratio ? detailsData.ratios[styleDetails.ratioId]?.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b) : 0;
                                     const totalQty = (shipping.units / unitsPerInner) * colorSize.ratio;
                                     const cbm = parseFloat(styleData.cbm).toFixed(4);
+                                    const iva = purchaseStyle.purchaseStore.store.destinyCountry.iva;
                                     this.dataToExport.push({
                                         status: color.status.name,
                                         season: purchaseStyle.purchaseStore.purchase.seasonCommercial.name,
@@ -176,8 +177,8 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                         totalFob: totalQty * styleDetails.fob,
                                         dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                         importFactor: styleDetails.importFactor * 1 || 0,
-                                        imu:this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva).toFixed(2).toString().concat('%'),
-                                        imuSato:this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva).toFixed(2).toString().concat('%'),
+                                        imu:this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,iva).toFixed(2).toString().concat('%'),
+                                        imuSato:this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,iva).toFixed(2).toString().concat('%'),
                                         cost: (styleDetails.fob || 0 * styleDetails.dollarChange || 0 * styleDetails.importFactor || 0) || 0,
                                         totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * color.getTotalUnits())*(1/1) || 0, // TODO: Pending
                                         totalRetail: (styleDetails.price * totalQty)*(1/1), // TODO: Pending
