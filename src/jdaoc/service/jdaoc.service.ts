@@ -7,18 +7,35 @@ import { StyleProxyService } from '../../external-services/style-proxy/style-pro
 import { JdaOcDto } from '../dtos/jdaoc.dto';
 import { JdaOcFilterDto } from '../dtos/jdaocFilter.dto';
 import moment = require('moment');
+import * as XLSX from '@sheet/image';
+import { v4 as uuidv4 } from 'uuid';
+import * as AWS from 'aws-sdk';
+import { AwsS3 } from '../../shared/class/AwsS3';
+import { ConfigService } from 'nestjs-config';
 
 
 @Injectable()
 export class JdaOcService {
     private logger = new Logger('JdaOcService');
+    private AWS_S3_BUCKET_NAME: string;
+    private s3: AWS.S3;
     private pool: any;
 
     constructor(
         @InjectRepository(Provider)
         private readonly providerRepository: Repository<Provider>,
-        private styleService: StyleProxyService)
-        { this.connect(); }
+        private styleService: StyleProxyService,
+        private config: ConfigService,)
+        { 
+            this.connect(); 
+            this.AWS_S3_BUCKET_NAME = this.config.get('aws').aws_s3_bucket_name;
+            AWS.config.update({
+                accessKeyId: this.config.get('aws').aws_access_key_id,
+                secretAccessKey: this.config.get('aws').aws_secret_access_key,
+            });
+            this.s3 = new AWS.S3();
+        }
+
 
     async connect() {
         try {
@@ -127,5 +144,120 @@ export class JdaOcService {
             this.logger.error(error);
         }
         return [];
+    }
+
+    async jdaOcDetailsB200(ocNumbers: string[]): Promise<string> {
+        try {
+            let sqlQuery = `SELECT POFPCD,POSTOR,POVNUM,INUMBR AS SKU,POMQTY,POMYZD,VOLU,UNID,TICO1,TICT1,
+                                    POMYZF,SWTQA,FCHNOE,FCHNEC,INSTPA,ICOTER,PUEORI,FEEM,GESE,NMBGS,CONT,EMAI,
+                                    TICO2,TICT2,TICO3,TICT3,CACO1,CACO2,CACO3,OCMAST,PROFOR,VIATRA,TIPMO,TEMPO
+                            FROM MMSP4LIB.POMHDR a
+                            INNER JOIN MMSP4LIB.POMDTL B ON a.PONUMB = b.PONUMB
+                            INNER JOIN MMSP4LIB.POMYYD C ON a.PONUMB = c.NUMORD
+                            INNER JOIN MMSP4LIB.POMYZC D ON a.PONUMB = D.POMYZO
+                            WHERE a.POSTAT = '3' AND a.POTPID = 'I'
+                            AND a.POSTOR IN (200)`;
+
+            if (ocNumbers.length > 0) {
+                sqlQuery += ` AND H.PONUMB IN (${ocNumbers.join(',')})`;
+            }
+
+            const ocs = await this.pool.query(sqlQuery);
+            if (ocs.length === 0) { return null; } 
+
+            sqlQuery = `SELECT * FROM MMSP4LIB.POMYYE WHERE TIPCDG IN (1,2,3,5,6) ORDER BY TIPCDG`
+            const dataCodes = {};
+            const codes = await this.pool.query(sqlQuery);
+            codes.forEach(item => { dataCodes[item.DESC] = item.CDG; });
+
+            const data = ocs.map(oc => {
+                return {
+                    POFPCD: oc.POFPCD,
+                    POSTOR: oc.POSTOR,
+                    POVNUM: oc.POVNUM,
+                    INUMBR: oc.INUMBR,
+                    EAN: '',
+                    POMQTY: oc.POMQTY,
+                    POMYZD: oc.POMYZD.replace('.', ','),
+                    POMYZF: oc.POMYZF.replace('.', ','),
+                    SWTQA: oc.SWTQA,
+                    FCHNOE: oc.FCHNOE,
+                    FCHNEC: oc.FCHNEC,
+                    INSTPA: oc.INSTPA,
+                    ICOTER: dataCodes[oc.ICOTER] || oc.ICOTER,
+                    PUEORI: oc.PUEORI,
+                    FEEM: oc.FEEM,
+                    GESE: oc.GESE,
+                    NMBGS: oc.NMBGS,
+                    CONT: oc.CONT,
+                    EMAI: oc.EMAI,                                    
+                    VOLU: oc.VOLU.replace('.', ','),                                    
+                    UNID: oc.UNID,                                    
+                    TICO1: oc.TICO1,                                    
+                    TICT1: oc.TICT1,                                    
+                    TICO2: oc.TICO2,                                    
+                    TICT2: oc.TICT2,                                    
+                    TICO3: oc.TICO3,                                    
+                    TICT3: oc.TICT3,                                    
+                    CACO1: oc.CACO1,                                    
+                    CACO2: oc.CACO2,                                    
+                    CACO3: oc.CACO3,                                    
+                    OCMAST: oc.OCMAST,                                    
+                    PROFOR: oc.PROFOR,                                    
+                    VIATRA: dataCodes[oc.VIATRA] || oc.VIATRA,                                    
+                    TIPMO: dataCodes[oc.TIPMO] || oc.TIPMO,                                    
+                    TEMPO: oc.TEMPO,                                    
+                    Separator: '',                                    
+                }
+            });
+
+            const headers = {
+                POFPCD: 'CANAL',
+                POSTOR: 'WHS',
+                POVNUM: 'PROVIDER',
+                INUMBR: 'SKU',
+                EAN: 'EAN',
+                POMQTY: 'QTY',
+                POMYZD: 'POMYZD',
+                POMYZF: 'POMYZF',
+                SWTQA: 'SWTQA',
+                FCHNOE: 'FCHNOE',
+                FCHNEC: 'FCHNEC',
+                INSTPA: 'INSTPA',
+                ICOTER: 'ICOTER',
+                PUEORI: 'PUEORI',
+                FEEM: 'FEEM',
+                GESE: 'GESE',
+                NMBGS: 'NMBGS',
+                CONT: 'CONT',
+                EMAI: 'EMAI',
+                VOLU: 'VOLU',
+                UNID: 'UNID',
+                TICO1: 'TICO1',
+                TICT1: 'TICT1',
+                TICO2: 'TICO2',
+                TICT2: 'TICT2',
+                TICO3: 'TICO3',
+                TICT3: 'TICT3',
+                CACO1: 'CACO1',
+                CACO2: 'CACO2',
+                CACO3: 'CACO3',
+                OCMAST: 'OCMAST',
+                PROFOR: 'PROFOR',
+                VIATRA: 'VIATRA',
+                TIPMO: 'TIPMO',
+                TEMPO: 'TEMPO',
+            };
+            const ws = XLSX.utils.json_to_sheet([headers, ...data], { skipHeader: true });
+            const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
+            const bufferFile = Buffer.from(csv, 'utf8');
+            const name = `JdaOcDetailsB200_${uuidv4()}.csv`;
+            const S3 = new AwsS3(this.s3, this.AWS_S3_BUCKET_NAME);
+            const url = await S3.uploadFile(bufferFile, name, 'text/csv', 10800, this.logger);
+            return url;
+        } catch (error) {
+            this.logger.error(error);
+        }
+        return null;
     }
 }
