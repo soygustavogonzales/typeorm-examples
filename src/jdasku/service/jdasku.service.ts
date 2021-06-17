@@ -444,6 +444,7 @@ export class JdaskuService {
     }
 
     async cleanSkus(stylesId: number[], ruleCause: CleanSkuRuleCause, user: any) {
+        this.logger.debug(`Cleaning skus for cause ${ruleCause}, styles: ${stylesId}`, 'cleanSkus: start');
         const skusStyles = await this.skuRepository.find({ where: { styleId: In(stylesId) }, relations: ['skuColor', 'skuColor.skuColorSize'] });
         
         let querySku = this.skuColorSizeRepository.createQueryBuilder('skuColorSize')

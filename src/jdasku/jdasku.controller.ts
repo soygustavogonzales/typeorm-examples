@@ -9,6 +9,7 @@ import { JdaskusyncService } from './service/jdaskusync.service';
 import { ResponseApi } from './dtos/responseApi.entity';
 import { UserDecode } from '../shared/dtos/userDecode.entity';
 import { SkuSummaryGroup } from './dtos/skuSummaryGroup.dto';
+import { CleanSkuDto } from './dtos/cleanSku.dto';
 
 @Controller('jdasku')
 @ApiTags('JdaSku')
@@ -47,6 +48,17 @@ export class JdaskuController {
     @ApiBody({ type: 'number' })
     async checkApprovedStylesColors(@Param('id') id, @Param('cause') cause, @Body() user: UserDecode): Promise<ResponseApi<boolean>> {
         await this.jdaskuService.cleanSkus([parseInt(id, null)], parseInt(cause, null), user);
+        return { status: 200, data: true };
+    }
+
+    @Post('clean-skus')
+    @ApiBody({ type: CleanSkuDto })
+    @ApiOkResponse({
+        description: 'Servicio para limpiar skus de forma masiva',
+    })
+    async cleanMany(@Body() dto: CleanSkuDto): Promise<ResponseApi<boolean>> {
+        const { styles, cleanCause, user } = dto;
+        await this.jdaskuService.cleanSkus(styles, cleanCause, user);
         return { status: 200, data: true };
     }
 
