@@ -148,7 +148,7 @@ export class JdaOcService {
 
     async jdaOcDetailsB200(ocNumbers: string[]): Promise<string> {
         try {
-            let sqlQuery = `SELECT POFPCD,POSTOR,POVNUM,INUMBR AS SKU,POMQTY,POMYZD,VOLU,UNID,TICO1,TICT1,
+            let sqlQuery = `SELECT POFPCD,POSTOR,POVNUM,INUMBR,POMQTY,POMYZD,VOLU,UNID,TICO1,TICT1,
                                     POMYZF,SWTQA,FCHNOE,FCHNEC,INSTPA,ICOTER,PUEORI,FEEM,GESE,NMBGS,CONT,EMAI,
                                     TICO2,TICT2,TICO3,TICT3,CACO1,CACO2,CACO3,OCMAST,PROFOR,VIATRA,TIPMO,TEMPO
                             FROM MMSP4LIB.POMHDR a
@@ -211,44 +211,7 @@ export class JdaOcService {
                 }
             });
 
-            const headers = {
-                POFPCD: 'CANAL',
-                POSTOR: 'WHS',
-                POVNUM: 'PROVIDER',
-                INUMBR: 'SKU',
-                EAN: 'EAN',
-                POMQTY: 'QTY',
-                POMYZD: 'POMYZD',
-                POMYZF: 'POMYZF',
-                SWTQA: 'SWTQA',
-                FCHNOE: 'FCHNOE',
-                FCHNEC: 'FCHNEC',
-                INSTPA: 'INSTPA',
-                ICOTER: 'ICOTER',
-                PUEORI: 'PUEORI',
-                FEEM: 'FEEM',
-                GESE: 'GESE',
-                NMBGS: 'NMBGS',
-                CONT: 'CONT',
-                EMAI: 'EMAI',
-                VOLU: 'VOLU',
-                UNID: 'UNID',
-                TICO1: 'TICO1',
-                TICT1: 'TICT1',
-                TICO2: 'TICO2',
-                TICT2: 'TICT2',
-                TICO3: 'TICO3',
-                TICT3: 'TICT3',
-                CACO1: 'CACO1',
-                CACO2: 'CACO2',
-                CACO3: 'CACO3',
-                OCMAST: 'OCMAST',
-                PROFOR: 'PROFOR',
-                VIATRA: 'VIATRA',
-                TIPMO: 'TIPMO',
-                TEMPO: 'TEMPO',
-            };
-            const ws = XLSX.utils.json_to_sheet([headers, ...data], { skipHeader: true });
+            const ws = XLSX.utils.json_to_sheet([...data], { skipHeader: true });
             const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
             const bufferFile = Buffer.from(csv, 'utf8');
             const name = `JdaOcDetailsB200_${uuidv4()}.csv`;
