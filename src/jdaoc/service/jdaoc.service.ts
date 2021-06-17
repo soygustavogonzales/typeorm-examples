@@ -159,7 +159,7 @@ export class JdaOcService {
                             AND a.POSTOR IN (200)`;
 
             if (ocNumbers.length > 0) {
-                sqlQuery += ` AND H.PONUMB IN (${ocNumbers.join(',')})`;
+                sqlQuery += ` AND a.PONUMB IN (${ocNumbers.join(',')})`;
             }
 
             const ocs = await this.pool.query(sqlQuery);
