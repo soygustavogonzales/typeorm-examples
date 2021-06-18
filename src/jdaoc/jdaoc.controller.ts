@@ -48,6 +48,15 @@ export class JdaocController {
         return await this.jdaocService.jdaOcByFilter(filter);
     }
 
+    @Post('details')
+    @ApiOkResponse({
+        description: 'Servicio para descargar los detalles de las ordenes de compra',
+    })
+    async jdaOcDetails(@Body() ocNumbers: string[]): Promise<ResponseApi<string>> {
+        const response = await this.jdaocService.jdaOcDetails(ocNumbers);
+        return {status: 200, data: response};
+    }
+
     @Post('detailsB200')
     @ApiOkResponse({
         description: 'Servicio para descargar los detalles de las ordenes de compra con B200',

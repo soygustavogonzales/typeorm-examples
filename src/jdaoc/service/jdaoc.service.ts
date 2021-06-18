@@ -146,6 +146,89 @@ export class JdaOcService {
         return [];
     }
 
+    async jdaOcDetails(ocNumbers: string[]): Promise<string> {
+        try {
+            let sqlQuery = `SELECT H.PONUMB, H.POMTYP, H.POTPID, H.POSTOR, 
+                            CASE
+                            WHEN D.INUMBR IS NULL AND C.PCQSKU IS NULL AND T.INUMBR IS NULL THEN X.PCSSKU 
+                            WHEN D.INUMBR IS NULL AND C.PCQSKU IS NULL AND X.PCSSKU IS NULL THEN T.INUMBR
+                            WHEN D.INUMBR IS NULL AND T.INUMBR IS NULL AND X.PCSSKU IS NULL THEN C.PCQSKU
+                            WHEN C.PCQSKU IS NULL AND T.INUMBR IS NULL AND X.PCSSKU IS NULL THEN D.INUMBR
+                            END AS ITEMS,
+                            CASE 
+                            WHEN D.POLOC IS NULL AND C.PCQLOC IS NULL AND T.POLOC IS NULL THEN X.PCSLOC
+                            WHEN D.POLOC IS NULL AND C.PCQLOC IS NULL AND  X.PCSLOC IS NULL THEN T.POLOC
+                            WHEN D.POLOC IS NULL AND T.POLOC IS NULL AND  X.PCSLOC IS NULL THEN C.PCQLOC
+                            WHEN C.PCQLOC IS NULL AND T.POLOC IS NULL AND  X.PCSLOC IS NULL THEN D.POLOC
+                            END AS LOCAL,
+                            CASE
+                            WHEN D.PODQTY IS NULL AND C.PCQDQT IS NULL AND T.POMQTY IS NULL THEN  X.PCSQTY
+                            WHEN D.PODQTY IS NULL AND C.PCQDQT IS NULL AND X.PCSQTY IS NULL THEN  T.POMQTY
+                            WHEN D.PODQTY IS NULL AND T.POMQTY IS NULL AND X.PCSQTY IS NULL THEN  C.PCQDQT
+                            WHEN C.PCQDQT IS NULL AND T.POMQTY IS NULL AND X.PCSQTY IS NULL THEN  D.PODQTY
+                            END AS CANTIDAD 
+                            FROM mmsp4lib.POMHDR H
+                            LEFT JOIN mmsp4lib.POMDSQ D ON H.PONUMB = D.PONUMB  
+                            LEFT JOIN mmsp4lib.POMCSQ C ON  C.PONUMB = H.PONUMB AND PCQTYP = 1
+                            LEFT JOIN MMSP4LIB.POMDTL T ON H.PONUMB = T.PONUMB AND H.POMTYP = 'S'
+                            LEFT JOIN MMSP4LIB.POMCSD X ON H.PONUMB = X.PONUMB  AND x.PCSTYP = 1 AND H.POMTYP = 'S'
+                            WHERE H.POSTAT = '2' AND H.POMUS1 <> ''`;
+
+            if (ocNumbers.length > 0) {
+                sqlQuery += ` AND H.PONUMB IN (${ocNumbers.join(',')})`;
+            }
+            
+            const ocs = await this.pool.query(sqlQuery);
+            if (ocs.length === 0) { return null; } 
+
+            const data = ocs.map(oc => {
+                let distributionType = '';
+                if (oc.POMTYP && oc.POMTYP === 'S') {
+                    distributionType = 'STOCK';
+                } else if (oc.POMTYP && oc.POMTYP === 'P') {
+                    distributionType = 'PREDISTRIBUIDA';
+                }
+
+                let origin = '';
+                if (oc.POTPID && oc.POTPID === 'I') {
+                    origin = 'IMPORT';
+                } else if (oc.POTPID && oc.POTPID === 'D') {
+                    origin = 'DOMESTIC';
+                }
+
+                return {
+                    PONUMB: oc.PONUMB,
+                    POMTYP: distributionType,
+                    POTPID: origin,
+                    POSTOR: oc.POSTOR,
+                    ITEMS: oc.ITEMS,
+                    LOCAL: oc.LOCAL,
+                    CANTIDAD: oc.CANTIDAD,
+                }
+            });
+
+            const headers = {
+                PONUMB: 'OC NUMBER',
+                POMTYP: 'DISTRIBUTION TYPE',
+                POTPID: 'ORIGIN',
+                POSTOR: 'WHS',
+                ITEMS: 'SKU',
+                LOCAL: 'LOCAL',
+                CANTIDAD: 'QUANTITY',
+            };
+            const ws = XLSX.utils.json_to_sheet([headers, ...data], { skipHeader: true });
+            const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
+            const bufferFile = Buffer.from(csv, 'utf8');
+            const name = `JdaOcDetails_${uuidv4()}.csv`;
+            const S3 = new AwsS3(this.s3, this.AWS_S3_BUCKET_NAME);
+            const url = await S3.uploadFile(bufferFile, name, 'text/csv', 10800, this.logger);
+            return url;
+        } catch (error) {
+            this.logger.error(error);
+        }
+        return null;
+    }
+
     async jdaOcDetailsB200(ocNumbers: string[]): Promise<string> {
         try {
             let sqlQuery = `SELECT POFPCD,POSTOR,POVNUM,INUMBR,POMQTY,POMYZD,VOLU,UNID,TICO1,TICT1,
