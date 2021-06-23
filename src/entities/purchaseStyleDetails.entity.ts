@@ -14,6 +14,7 @@ import { Cso } from './cso.entity';
 import { ExitPort } from './exitPort.entity';
 import { PurchaseStyleNegotiation } from './purchaseStyleNegotiation.entity';
 import { SustainableFeature } from './sustainableFeature.entity';
+import { Certifications } from './certifications.entity';
 
 @Entity()
 export class PurchaseStyleDetails {
@@ -133,6 +134,11 @@ export class PurchaseStyleDetails {
     sustainableFeatureId: number;
     @ManyToOne(() => SustainableFeature, { nullable: true })
     sustainableFeature: SustainableFeature;
+
+    @Column({ nullable: true })
+    certificationsId: number;
+    @ManyToOne(() => Certifications, { nullable: true })
+    certifications: Certifications;
 
     @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.purchaseStyle)
     purchaseStyleId: number;
