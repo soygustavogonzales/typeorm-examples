@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Param, UseGuards, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ResponseApi } from '../jdasku/dtos/responseApi.entity';
 import { ComposeGuard } from '../shared/guards/auth.guard';
 import { JdaOcDto } from './dtos/jdaoc.dto';
 import { JdaOcFilterDto } from './dtos/jdaocFilter.dto';
@@ -46,4 +47,23 @@ export class JdaocController {
     async jdaOcByFilter(@Body() filter: JdaOcFilterDto): Promise<JdaOcDto[]> {
         return await this.jdaocService.jdaOcByFilter(filter);
     }
+
+    @Post('details')
+    @ApiOkResponse({
+        description: 'Servicio para descargar los detalles de las ordenes de compra',
+    })
+    async jdaOcDetails(@Body() ocNumbers: string[]): Promise<ResponseApi<string>> {
+        const response = await this.jdaocService.jdaOcDetails(ocNumbers);
+        return {status: 200, data: response};
+    }
+
+    @Post('detailsB200')
+    @ApiOkResponse({
+        description: 'Servicio para descargar los detalles de las ordenes de compra con B200',
+    })
+    async jdaOcDetailsB200(@Body() ocNumbers: string[]): Promise<ResponseApi<string>> {
+        const response = await this.jdaocService.jdaOcDetailsB200(ocNumbers);
+        return {status: 200, data: response};
+    }
+
 }

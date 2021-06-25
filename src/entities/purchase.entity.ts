@@ -1,7 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, RelationId, ManyToMany, JoinTable, JoinColumn } from 'typeorm';
 import { SeasonCommercial } from './seasonCommercial.entity';
 import { Status } from './status.entity';
-import { Store } from './store.entity';
 import { PurchaseStore } from './purchaseStore.entity';
 import { PurchaseStyleNegotiation } from './purchaseStyleNegotiation.entity';
 
