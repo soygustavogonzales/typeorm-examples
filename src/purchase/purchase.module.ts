@@ -57,7 +57,7 @@ import { OcJda } from '../entities/ocJda.entity';
 import { Sku } from '../entities/sku.entity';
 import { SustainableFeature } from '../entities/sustainableFeature.entity';
 import { Certifications } from '../entities/certifications.entity';
-
+import { Exhibition } from '../entities/exhibition.entity';
 @Module({
   imports: [ExternalServicesModule, TypeOrmModule.forFeature(
     [
@@ -65,7 +65,7 @@ import { Certifications } from '../entities/certifications.entity';
       PurchaseStyle, PurchaseStyleNegotiation, PurchaseStyleColor, ShippingDates, ShippingDatesChild,
       PurchaseStyleColorShipping, PurchaseStyleDetails, Provider, ImportFactor, DollarChange,
       OriginCountry, Size, Shipmethod, Packaging, SeasonSticker, Rse, Cso, Category, ExitPort,
-      Designer, Ratio, Segment, StatusPurchaseColor, OcJda, Sku, SustainableFeature, Certifications,
+      Designer, Ratio, Segment, StatusPurchaseColor, OcJda, Sku, SustainableFeature, Certifications, Exhibition,
     ]), SharedModule, JdaskuModule],
   controllers: [PurchaseController],
   providers: [PurchaseService, StatusService, StoreService, PurchaseStyleService,
