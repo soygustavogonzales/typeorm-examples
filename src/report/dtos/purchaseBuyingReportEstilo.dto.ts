@@ -88,7 +88,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
         _.flatten(purchaseStyles.map(purchaseStyle => {
             return purchaseStyle.colors.map(color => {
                 const styleData = stylesData.find(s => s.id === purchaseStyle.styleId);
-                const styleDetails = purchaseStyle.details[0];                
+                const styleDetails = purchaseStyle.details[0];
+                const destinyCountry = purchaseStyle.purchaseStore.store.destinyCountry;         
                 if (styleData && styleDetails) {
                     const colorData = styleData.colors.find(c => c.id === color.styleColorId);                    
                     if (colorData) {
@@ -115,6 +116,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                         for (const shipping of color.shippings.filter(s => s.units > 0)) {
                             const shippingOcs = ocs.filter(o => o.piname === shipping.piName);
                             const cbm = parseFloat(styleData.cbm).toFixed(4);
+                            const iva = (purchaseStyle.purchaseStore.store.destinyCountry.iva)/100;
                             this.dataToExport.push({
                                 status: color.status.name,
                                 season: purchaseStyle.purchaseStore.purchase.seasonCommercial.name,
@@ -129,7 +131,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 providerCode: detailsData.providers[styleDetails.providerId]?.codeJda || '',
                                 provider: detailsData.providers[styleDetails.providerId]?.name || '',
                                 cso: detailsData.csos[styleDetails.csoId]?.name || '',
-                                brand: styleData.brand,
+                                brand: destinyCountry.shortName === 'PE' && styleData.brand.toUpperCase() === 'MELT' ? 'AUSSIE' : styleData.brand,
                                 styleCode: styleData.code,
                                 sku: referentialSku?.sku || '',
                                 atcId: (purchaseStyle.purchaseStore.store.shortName !== 'PW' &&
@@ -168,8 +170,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 totalFob: shipping.units * styleDetails.fob,
                                 dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                 importFactor: styleDetails.importFactor * 1 || 0,
-                                imu:(this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toFixed(2).toString().concat('%'),
-                                imuSato:(this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva)*100).toFixed(2).toString().concat('%'),
+                                imu:(this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,iva)*100).toFixed(2).toString().concat('%'),
+                                imuSato:(this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,iva)*100).toFixed(2).toString().concat('%'),
                                 cost: (styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) || 0,
                                 totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * shipping.units * 1.0) || 0,
                                 totalRetail: (styleDetails.price * shipping.units) * 1.0,
@@ -177,7 +179,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 productManager,
                                 designer,
                                 piNumber: shipping.piName,
-                                country: purchaseStyle.purchaseStore.store.destinyCountry.name,
+                                country: destinyCountry.name,
                                 sticker: detailsData.seasonStickers[styleDetails.seasonStickerId]?.name || '',
                                 internetDescription: styleDetails.internetDescription,
                                 segment: detailsData.segments[styleDetails.segmentId]?.name || '',

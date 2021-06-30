@@ -91,6 +91,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
             return purchaseStyle.colors.map(color => {
                 const styleData = stylesData.find(s => s.id === purchaseStyle.styleId);
                 const styleDetails = purchaseStyle.details[0];
+                const destinyCountry = purchaseStyle.purchaseStore.store.destinyCountry;
                 if (styleData && styleDetails) {
                     const colorData = styleData.colors.find(c => c.id === color.styleColorId);                    
                     if (colorData) {
@@ -120,6 +121,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                     const unitsPerInner = detailsData.ratios[styleDetails.ratioId]?.ratio ? detailsData.ratios[styleDetails.ratioId]?.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b) : 0;
                                     const totalQty = (shipping.units / unitsPerInner) * colorSize.ratio;
                                     const cbm = parseFloat(styleData.cbm).toFixed(4);
+                                    const iva = (purchaseStyle.purchaseStore.store.destinyCountry.iva)/100; //el iva viene como numero entero, no en decimales: 19, 18, etc
                                     this.dataToExport.push({
                                         status: color.status.name,
                                         season: purchaseStyle.purchaseStore.purchase.seasonCommercial.name,
@@ -134,7 +136,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                         providerCode: detailsData.providers[styleDetails.providerId]?.codeJda || '',
                                         provider: detailsData.providers[styleDetails.providerId]?.name || '',
                                         cso: detailsData.csos[styleDetails.csoId]?.name || '',
-                                        brand: styleData.brand,
+                                        brand: destinyCountry.shortName === 'PE' && styleData.brand.toUpperCase() === 'MELT' ? 'AUSSIE' : styleData.brand,
                                         styleCode: styleData.code,
                                         sku: colorSize.sku,
                                         ean: colorSize.ean,
@@ -175,8 +177,8 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                         totalFob: totalQty * styleDetails.fob,
                                         dollarBought: styleDetails.dollarChange*(1/1) || 0,
                                         importFactor: styleDetails.importFactor * 1 || 0,
-                                        imu:this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva).toFixed(2).toString().concat('%'),
-                                        imuSato:this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,this.iva).toFixed(2).toString().concat('%'),
+                                        imu:this.getImu(styleDetails.price,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,iva).toFixed(2).toString().concat('%'),
+                                        imuSato:this.getImuSato(styleDetails.sato,styleDetails.fob,styleDetails.importFactor,styleDetails.dollarChange,iva).toFixed(2).toString().concat('%'),
                                         cost: (styleDetails.fob || 0 * styleDetails.dollarChange || 0 * styleDetails.importFactor || 0) || 0,
                                         totalCost: ((styleDetails.fob * styleDetails.dollarChange * styleDetails.importFactor) * color.getTotalUnits())*(1/1) || 0, // TODO: Pending
                                         totalRetail: (styleDetails.price * totalQty)*(1/1), // TODO: Pending
@@ -184,7 +186,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                         productManager,
                                         designer,
                                         piNumber: shipping.piName,
-                                        country: purchaseStyle.purchaseStore.store.destinyCountry.name,
+                                        country: destinyCountry.name,
                                         sticker: detailsData.seasonStickers[styleDetails.seasonStickerId]?.name || '',
                                         internetDescription: styleDetails.internetDescription,
                                         segment: detailsData.segments[styleDetails.segmentId]?.name || '',
