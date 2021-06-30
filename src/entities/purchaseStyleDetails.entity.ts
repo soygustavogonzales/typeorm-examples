@@ -14,11 +14,14 @@ import { Cso } from './cso.entity';
 import { ExitPort } from './exitPort.entity';
 import { PurchaseStyleNegotiation } from './purchaseStyleNegotiation.entity';
 import { SustainableFeature } from './sustainableFeature.entity';
+import { Exhibition } from './exhibition.entity';
+import { Certifications } from './certifications.entity';
 
 @Entity()
 export class PurchaseStyleDetails {
     @PrimaryGeneratedColumn()
     id: number;
+
 
     @Column({ nullable: true, default: false })
     atc: boolean;
@@ -65,26 +68,19 @@ export class PurchaseStyleDetails {
     @Column({ nullable: true })
     gauge: string;
 
-    @Column({ nullable: true })
-    seasonStickerId: number;
     @ManyToOne(() => SeasonSticker, { nullable: true })
     seasonSticker: SeasonSticker;
 
-    @Column({ nullable: true })
-    sizeId: number;
     @ManyToOne(() => Size, { nullable: true })
     size: Size;
 
-    @Column({ nullable: true })
-    ratioId: number;
     @ManyToOne(() => Ratio, { nullable: true })
     ratio: Ratio;
 
-    @Column({ nullable: true })
-    shippingMethodId: number;
     @ManyToOne(() => Shipmethod, { nullable: true })
     shippingMethod: Shipmethod;
 
+    // Optionals
     @Column({ nullable: true })
     collection: string;
 
@@ -109,6 +105,8 @@ export class PurchaseStyleDetails {
     @Column({ nullable: true })
     fabricConstruction: string;
 
+    // Columns generate with approvement
+
     @Column({ nullable: true })
     fabricWeaving: string;
 
@@ -124,61 +122,72 @@ export class PurchaseStyleDetails {
     @Column({ type: 'decimal', scale: 2, nullable: true })
     imu: number;
 
-    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.rse)
-    rseId: number;
     @ManyToOne(() => Rse, { nullable: true })
     rse: Rse;
 
-    @Column({ nullable: true })
-    sustainableFeatureId: number;
+    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.rse)
+    rseId: number;
+
     @ManyToOne(() => SustainableFeature, { nullable: true })
     sustainableFeature: SustainableFeature;
 
-    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.purchaseStyle)
-    purchaseStyleId: number;
+    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.sustainableFeature)
+    sustainableFeatureId: number;
+
+    @ManyToOne(() => Certifications, { nullable: true })
+    certifications: Certifications;
+
+    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.certifications)
+    certificationsId: number;
+
+    @ManyToOne(() => Exhibition, { nullable: true })
+    exhibition: Exhibition;
+
+    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.exhibition)
+    exhibitionId: number;
+
     @ManyToOne(() => PurchaseStyle, { onDelete: 'CASCADE' })
     purchaseStyle: PurchaseStyle;
 
-    @Column({ nullable: true })
-    segmentId: number;
+    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.purchaseStyle)
+    purchaseStyleId: number;
+
     @ManyToOne(() => Segment, { nullable: true })
     segment: Segment;
 
     @Column({ nullable: true })
     referencialProvider: string;
 
-    @Column({ nullable: true })
-    csoId: number;
+    // @ManyToOne(() => Profile, { nullable: true })
+    // profile: Profile;
+
     @ManyToOne(() => Cso, { nullable: true })
     cso: Cso;
-    
-    @Column({ nullable: true })
-    providerId: number;
+
+
     @ManyToOne(() => Provider, { nullable: true })
     provider: Provider;
 
-    @Column({ nullable: true })
-    originId: number;
+
     @ManyToOne(() => OriginCountry, { nullable: true })
     origin: OriginCountry;
 
-    @Column({ nullable: true })
-    packingMethodId: number;
     @ManyToOne(() => Packaging, { nullable: true })
     packingMethod: Packaging;
 
-    @Column({ nullable: true })
-    categoryId: number;
+    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.packingMethod)
+    packingMethodId: number;
+
     @ManyToOne(() => Category, { nullable: true })
     category: Category;
 
-    @Column({ nullable: true })
-    exitPortId: number;
     @ManyToOne(() => ExitPort, { nullable: true })
     exitPort: ExitPort;
 
     @ManyToOne(() => PurchaseStyleNegotiation, { nullable: true })
     purchaseStyleNegotiation: PurchaseStyleNegotiation;
+
+    // Product Manager
 
     @CreateDateColumn({ type: 'timestamptz', default: () => 'LOCALTIMESTAMP' })
     createDate: Date;
@@ -188,4 +197,5 @@ export class PurchaseStyleDetails {
 
     @DeleteDateColumn({ type: 'timestamptz' })
     deleteDate: Date;
+
 }
