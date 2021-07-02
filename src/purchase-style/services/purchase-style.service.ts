@@ -389,7 +389,7 @@ export class PurchaseStyleService {
                 .leftJoinAndMapMany('purchaseStyle.sku', Sku, 'sku', 'purchaseStyle.styleId = sku.styleId AND details.provider = sku.provider')
                 .where({ active: true })
                 .andWhere('colors.state = true')
-                .andWhere('oc.potpid = I');
+                .andWhere(`oc.potpid = 'I'`);
 
             if (!includeUnits0) {
                 query = query.andWhere('shippings.units<>0');
