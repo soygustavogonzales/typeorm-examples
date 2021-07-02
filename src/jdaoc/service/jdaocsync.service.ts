@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationPublisherService } from '../../external-services/events/notification-publisher.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OcJda } from '../../entities/ocJda.entity';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { Purchase } from '../../entities/purchase.entity';
 import * as _ from 'lodash';
 
@@ -11,7 +11,6 @@ export class JdaOcSyncService {
     // Create a logger instance
     private logger = new Logger('JdaOcSyncService');
     private pool: any;
-    private pgmCreateSku: any;
 
     constructor(
         @InjectRepository(Purchase)
@@ -28,13 +27,6 @@ export class JdaOcSyncService {
         };
 
         this.pool = require('node-jt400').pool(dbconfig);
-        this.pgmCreateSku = this.pool.defineProgram({
-            programName: process.env.AS400PGMSKU,
-            paramsSchema: [
-                { type: 'CHAR', precision: 32, scale: 0, name: 'Member' },
-            ],
-            libraryName: 'MMSP4PGM', // Optional. Defaults to *LIBL
-        });
     }
 
     async jdasync() {
@@ -96,13 +88,19 @@ export class JdaOcSyncService {
         }
 
         createdOc = await Promise.all(piInfo.map(async p => {
-            const oc = await this.ocJdaRepository.findOne({ where: { piname: p.piname, ponumb: p.ponumb } });
-            if (!oc) {
-                console.log(p);
+            const oc = await this.ocJdaRepository.findOne({ where: [
+                { piname: p.piname, ponumb: p.ponumb },
+                { piname: IsNull(), ponumb: p.ponumb }
+            ] });
+            if (oc) {
+                oc.piname = p.piname;
+                oc.providerId = p.provider
+                await this.ocJdaRepository.save(oc);
+                return { piname: p.ponot1, ponumb: p.ponumb }
+            } else {
                 await this.ocJdaRepository.save(p);
                 return { piname: p.ponot1, ponumb: p.ponumb }
             }
-            return null;
         }));
 
         return { createdOc: createdOc.filter(p => p), cancelledOc: cancelledOc };

@@ -8,9 +8,10 @@ import { SharedModule } from '../shared/shared.module';
 import { JdaOcSyncService } from './service/jdaocsync.service';
 import { JdaOcService } from './service/jdaoc.service';
 import { Provider } from '../entities/provider.entity';
+import { OcJdaMbr } from '../entities/ocJdaMbr.entity';
 
 @Module({
-  imports: [ExternalServicesModule, TypeOrmModule.forFeature([Purchase, OcJda, Provider
+  imports: [ExternalServicesModule, TypeOrmModule.forFeature([Purchase, OcJda, Provider, OcJdaMbr
   ]), SharedModule],
   controllers: [JdaocController],
   providers: [JdaOcSyncService, JdaOcService],
