@@ -388,7 +388,8 @@ export class PurchaseStyleService {
                 .leftJoinAndMapMany('shippings.oc', OcJda, 'oc', 'shippings.piName = oc.piname')
                 .leftJoinAndMapMany('purchaseStyle.sku', Sku, 'sku', 'purchaseStyle.styleId = sku.styleId AND details.provider = sku.provider')
                 .where({ active: true })
-                .andWhere('colors.state = true');
+                .andWhere('colors.state = true')
+                .andWhere('oc.potpid = I');
 
             if (!includeUnits0) {
                 query = query.andWhere('shippings.units<>0');
@@ -729,7 +730,7 @@ export class PurchaseStyleService {
             const stylesIds = Array.from(new Set(purchaseStylesDb.map(s => s.styleId)));
 
             const piNames = _.chain(purchaseStylesDb.map(ps => ps.colors.map(c => c.shippings.map(s => s.piName)))).flatten().flatten().uniq().value();
-            const ocs = await this.ocJdaRepository.find({ where: { piname: In(piNames) } });
+            const ocs = await this.ocJdaRepository.find({ where: { piname: In(piNames), potpid: 'I' } });
 
             if (stylesIds.length > 0 && (((filter.departments && filter.departments.length > 0) || (filter.brands && filter.brands.length > 0)) || approved)) {
                 let stylesData = await this.externalStyleService.getStylesDataByIdsBatch(stylesIds);
@@ -781,7 +782,8 @@ export class PurchaseStyleService {
                 .leftJoinAndSelect('colors.shippings', 'shippings')
                 .leftJoinAndMapMany('shippings.oc', OcJda, 'oc', 'shippings.piName = oc.piname')
                 .where({ active: true })
-                .andWhere('colors.state = true');
+                .andWhere('colors.state = true')
+                .andWhere('oc.potpid = I');
 
             if (!includeUnits0) {
                 query = query.andWhere('shippings.units<>0');
