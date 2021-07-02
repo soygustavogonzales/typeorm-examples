@@ -28,6 +28,7 @@ import { PurchaseBuyingReport } from '../dtos/purchaseBuyingReport.dto';
 import { PurchaseBuyingReportSku } from '../dtos/purchaseBuyingReportSku.dto';
 import { PurchaseStyle } from '../../entities/purchaseStyle.entity';
 import { StoreService } from '../../store/service/store.service';
+
 @Injectable()
 export class ReportService {
     private logger = new Logger('ReportService');
@@ -234,7 +235,6 @@ export class ReportService {
             this.logger.error(`Cambio de dollar no econtrado para las temporadas ${seasonCommercialIds.join(',')}`);
             return null;
         }
-
         let reportObject: PurchaseBuyingReport;
         switch (dto.level) {
             case 'CompraEstilo':
@@ -530,7 +530,7 @@ export class ReportService {
                     providerEMail: styleDetailReference.provider?.email || 'No Ingresado',
                     cencosudName: purchaseStylesByPiName[0].purchaseStore.store.destinyCountry.shortName === 'PE' ?
                         'CENCOSUD RETAIL PERU S.A.' : 'CENCOSUD RETAIL S.A.',
-                    cencosudAddress: purchaseStylesByPiName[0].purchaseStore.store.destinyCountry.shortName === 'PE' ?
+                    cencosudAddress: purchaseStylesByPiName[0].purchaseStore.store.name  === 'PARIS PERU' ?
                         'CALLE AUGUSTO ANGULO #130, SAN ANTONIO MIRAFLORES, LIMA, PERÚ.' : 'AV. KENNEDY 9001, PISO 4, LAS CONDES, SANTIAGO, CHILE.',
                 };
                 const dataLogisticHeaders = {
@@ -538,7 +538,7 @@ export class ReportService {
                     typeTransport: `BY ${styleDetailReference.shippingMethod?.name.toUpperCase() || 'No Ingresado'}`,
                     portLoading: styleDetailReference.exitPort?.name.toUpperCase() || 'No Ingresado',
                     shipmentTerm: 'FOB',
-                    destinationPort: 'SAN ANTONIO',
+                    destinationPort: purchaseStylesByPiName[0].purchaseStore.store.destinyCountry.shortName === 'PE' ? 'COLLAO' : 'SAN ANTONIO',
                     earliestShippingDate,
                     lastShippingDate: lastShippingDate ? moment(lastShippingDate).format('DD-MM-YYYY') : '',
                 };
@@ -859,6 +859,7 @@ export class ReportService {
                 // BODY
                 let indx = 0;
                 for (const purchaseStyle of purchaseStylesByPiName) {
+                    const destinyCountry = purchaseStyle.purchaseStore.store.destinyCountry;
                     const styleData = stylesData.find(s => s.id === purchaseStyle.styleId);
                     const styleDetails = purchaseStyle.details[0];
                     const ratio = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null));
@@ -875,12 +876,12 @@ export class ReportService {
                         rowData.style_code = styleData.code;
                         rowData.description = `${styleData.code} ${styleData.classType}`;
                         rowData.fabric_q = styleDetails.composition;
-                        rowData.brand_name = styleData.brand;
+                        rowData.brand_name = destinyCountry.shortName === 'PE' && styleData.brand.toUpperCase() === 'MELT' ? 'AUSSIE' : styleData.brand;
                         rowData.size_curve = styleDetails.size.size;
                         rowData.size_ratio = styleDetails.ratio.ratio;
                         rowData.qtyXInner = styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b); // calculate by ratio,
                         rowData.qtyXMaster = styleData.divisionMaster;
-                        rowData.color_name = colorData.colorName;
+                        rowData.color_name = colorData?.colorName || '';
                         rowData.orderQtys = 0;
                         _.forEach(ratio, (r, k) => {
                             rowData[`size${k + 1}`] = Math.round((currentShipping.units * r) / rowData.qtyXInner);
@@ -1472,7 +1473,6 @@ export class ReportService {
             // const body : generateArrivalDatesDto = {
             //     purchaseStyleIds: purchaseStyles.map(ps => ps.id)
             // }
-            // const purchaseStyleColorShippments = await this.purchaseService.updateArrivalDates(body);
     
             if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
                 const requestReport = this.getNewRequestReport({ status: 'No Data', url: '', name: '', subscriptionId, userId, reportType: ReportType.PurchaseOrder });

@@ -99,6 +99,22 @@ export class StyleProxyService {
         }
 
     }
+    
+    async getDepartmentsByCodeDepartmentCountry(codes: number[]) {
+        try {
+            const url = `${this.api}/department/filter-by-code-department-country`;
+            const result = await this.httpService.post(url, codes, { headers: { 'api-key': this.apiKey } }).toPromise();
+            if (result.status === 201) {
+                return result.data;
+            } else {
+                return [];
+            }
+        } catch (error) {
+            this.logger.error(error);
+            return [];
+        }
+
+    }
 
     async getClassTypesByFilter(ids: number[]) {
         try {

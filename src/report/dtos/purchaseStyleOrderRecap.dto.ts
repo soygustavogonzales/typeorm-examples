@@ -73,76 +73,76 @@ export class PurchaseStyleOrderRecapDto {
     merchantsUserId: string;
 
     constructor(styleData: any, styleDetails: PurchaseStyleDetails, purchaseStyle: PurchaseStyle, color: PurchaseStyleColor, colorData: any, users: GetUserDto[], shipping: PurchaseStyleColorShipping) {
-        
+        const destinyCountry = purchaseStyle.purchaseStore.store.destinyCountry;
         // const firsDeliveryDate = color.shippings.map(s => s.date).sort((a, b) => a.getTime() - b.getTime())[0];
         const brandManager = users?.find(u => u.id.toString() == styleDetails.brandManager);
         // const productManager = users?.find(u => u.id.toString() == styleDetails.productManager);
         const designer = users?.find(u => u.id.toString() == styleDetails.designer);
         
-        this.status = 'Confirmed',
-        this.season = purchaseStyle.purchaseStore.purchase.seasonCommercial.name,
+        this.status = 'Confirmed';
+        this.season = purchaseStyle.purchaseStore.purchase.seasonCommercial.name;
         // this.productSeason = styleData.seasonProduct,
         // this.tripDate = moment(purchaseStyle.purchaseStore.purchase.tripDate).format('MMM-yyyy'),
-        this.unit = purchaseStyle.purchaseStore.store.name,
-        this.division = styleData.division,
-        this.departmentCode = styleData.departmentCode,
-        this.department = styleData.department,
+        this.unit = purchaseStyle.purchaseStore.store.name;
+        this.division = styleData.division;
+        this.departmentCode = styleData.departmentCode;
+        this.department = styleData.department;
         // this.classTypeCode = styleData.classTypeCode,
-        this.classType = styleData.classType,
-        this.providerCode = styleDetails.provider?.codeJda,
-        this.provider = styleDetails.provider?.name,
-        this.brand = styleData.brand,
-        this.composition = styleDetails.composition,
-        this.fabricWeaving = styleDetails.fabricWeaving,
-        this.fabricConstruction = styleDetails.fabricConstruction,
-        this.fabricWeight = styleDetails.fabricWight,
-        this.gauge = styleDetails.gauge,
-        this.styleCode = styleData.code,
-        this.color = colorData.colorName,
+        this.classType = styleData.classType;
+        this.providerCode = styleDetails.provider?.codeJda;
+        this.provider = styleDetails.provider?.name;
+        this.brand = destinyCountry.shortName === 'PE' && styleData.brand.toUpperCase() === 'MELT' ? 'AUSSIE' : styleData.brand;
+        this.composition = styleDetails.composition;
+        this.fabricWeaving = styleDetails.fabricWeaving;
+        this.fabricConstruction = styleDetails.fabricConstruction;
+        this.fabricWeight = styleDetails.fabricWight;
+        this.gauge = styleDetails.gauge;
+        this.styleCode = styleData.code;
+        this.color = colorData.colorName;
         // this.colorCode = colorData.colorCode,
         // this.collection = styleDetails.collection,
         // this.profile = styleData.profileJdaCode,
-        this.origin = styleDetails.origin?.name,
-        this.shippingMethod = styleDetails.shippingMethod?.name,
-        this.ratio = styleDetails.ratio?.ratio,
-        this.size = styleDetails.size?.size,
-        this.packingMethod = styleDetails.packingMethod?.name,
-        this.hanger = styleDetails.hanger ? 'YES' : 'NO',
-        this.vstTag = styleDetails.vstTag ? 'YES' : 'NO',
-        this.atc = styleDetails.atc ? 'YES' : 'NO',
-        this.unitsPerInner = styleDetails.ratio ? styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b) : 0,
-        this.innerPerMaster = styleData.divisionMaster,
+        this.origin = styleDetails.origin?.name;
+        this.shippingMethod = styleDetails.shippingMethod?.name;
+        this.ratio = styleDetails.ratio?.ratio;
+        this.size = styleDetails.size?.size;
+        this.packingMethod = styleDetails.packingMethod?.name;
+        this.hanger = styleDetails.hanger ? 'YES' : 'NO';
+        this.vstTag = styleDetails.vstTag ? 'YES' : 'NO';
+        this.atc = styleDetails.atc ? 'YES' : 'NO';
+        this.unitsPerInner = styleDetails.ratio ? styleDetails.ratio.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b) : 0;
+        this.innerPerMaster = styleData.divisionMaster;
         // this.cbm = (styleData.cbm *(Math.sqrt(styleData.cbm))/(Math.sqrt(styleData.cbm))),
         // this.totalCbm = color.getTotalUnits() * styleData.cbm,
-        this.rse = styleDetails.rse?.name || '',
+        this.rse = styleDetails.rse?.name || '';
         // this.totalQty = color.getTotalUnits(),
         // this.firstDelivery = firsDeliveryDate ? moment(firsDeliveryDate).format('DD-MMM-yyyy') : '',
         // Debido a que por defecto ocurre un error y en el excel no reconoce el valor numerico, al hacer un calculo adicional se reactualiza el formato numerico del atributo FOB
-        this.fob = (styleDetails.fob*(Math.sqrt(styleData.cbm)))/(Math.sqrt(styleData.cbm)),
+        this.fob = (styleDetails.fob*(Math.sqrt(styleData.cbm)))/(Math.sqrt(styleData.cbm));
         // this.totalFob = color.getTotalUnits() * styleDetails.fob,
-        this.brandManager = brandManager ? `${brandManager.firstName} ${brandManager.lastName}` : '',
+        this.brandManager = brandManager ? `${brandManager.firstName} ${brandManager.lastName}` : '';
         // this.productManager = productManager ? `${productManager.firstName} ${productManager.lastName}` : '' ,
-        this.designer = designer ? `${designer.firstName} ${designer.lastName}` : '' ,
-        this.piNumber = shipping.piName,
-        this.country = purchaseStyle.purchaseStore.store.destinyCountry.name,
-        this.sticker = styleDetails.seasonSticker.name,
-        this.internetDescription = styleDetails.internetDescription,
+        this.designer = designer ? `${designer.firstName} ${designer.lastName}` : '';
+        this.piNumber = shipping.piName;
+        this.country = destinyCountry.name;
+        this.sticker = styleDetails.seasonSticker.name;
+        this.internetDescription = styleDetails.internetDescription;
         // this.segment = styleDetails.segment?.name || '',
-        this.delivery = shipping.shipping,
-        this.units = shipping.units,
-        this.date = moment(shipping.date).format('DD-MMM-yyyy'),
-        this.category = styleDetails.category?.name,
-        this.exitPort = styleDetails.exitPort?.name,
-        this.exitPortCode = styleDetails.exitPort?.jdaCode,
+        this.delivery = shipping.shipping;
+        this.units = shipping.units;
+        this.date = moment(shipping.date).format('DD-MMM-yyyy');
+        this.category = styleDetails.category?.name;
+        this.exitPort = styleDetails.exitPort?.name;
+        this.exitPortCode = styleDetails.exitPort?.jdaCode;
         // Notification data
-        this.purchaseId = purchaseStyle.purchaseStore?.purchase?.id,
-        this.departmentsRelated = purchaseStyle.purchaseStore?.purchase?.departments ? purchaseStyle.purchaseStore.purchase.departments.join(',') : '',
-        this.purchaseUserId = purchaseStyle.purchaseStore?.purchase?.userId,
-        this.merchantsUserId = styleDetails.merchandiser,
+        this.purchaseId = purchaseStyle.purchaseStore?.purchase?.id;
+        this.departmentsRelated = purchaseStyle.purchaseStore?.purchase?.departments ? purchaseStyle.purchaseStore.purchase.departments.join(',') : '';
+        this.purchaseUserId = purchaseStyle.purchaseStore?.purchase?.userId;
+        this.merchantsUserId = styleDetails.merchandiser;
         // Group data
-        this.brandId = styleData.brandId,
-        this.departmentId = styleData.departmentId,
-        this.providerId = styleDetails.provider.id
+        this.brandId = styleData.brandId;
+        this.departmentId = styleData.departmentId;
+        this.providerId = styleDetails.provider.id;
     }
 }
 

@@ -18,7 +18,6 @@ export abstract class PurchaseBuyingReport {
     private logger = new Logger('ReportService');
     private requestReport: RequestReport;
     private bufferFile: any;
-    public iva = 0.19;
 
     protected abstract processData(purchaseStyles, stylesData, styleSkus, users, ocs, detailsData): void;
 
