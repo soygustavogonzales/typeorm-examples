@@ -111,6 +111,7 @@ dockerize:
         --from-literal=AS400USER=$AS400USER \
         --from-literal=AS400PASS=$AS400PASS \
         --from-literal=AS400PGMSKU=$AS400PGMSKU \
+        --from-literal=AS400PGMOC=$AS400PGMOC \
         --from-literal=AWS_REGION=$AWS_REGION \
         --from-literal=AWS_QUEUE_SQS_JDA_SKU_SYNC_URL=$AWS_QUEUE_SQS_JDA_SKU_SYNC_URL \
         -o yaml --dry-run=client > /tmp/$CI_PROJECT_NAME-secrets.yaml
