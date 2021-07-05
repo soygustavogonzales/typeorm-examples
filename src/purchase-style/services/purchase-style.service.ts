@@ -389,7 +389,10 @@ export class PurchaseStyleService {
                 .leftJoinAndMapMany('purchaseStyle.sku', Sku, 'sku', 'purchaseStyle.styleId = sku.styleId AND details.provider = sku.provider')
                 .where({ active: true })
                 .andWhere('colors.state = true')
-                .andWhere(`oc.potpid = 'I'`);
+                .andWhere(new Brackets((qb) => {
+                    qb = qb.orWhere(`oc.potpid = 'I'`);
+                    qb = qb.orWhere(`oc.potpid IS NULL`);
+                }));
 
             if (!includeUnits0) {
                 query = query.andWhere('shippings.units<>0');
@@ -783,7 +786,10 @@ export class PurchaseStyleService {
                 .leftJoinAndMapMany('shippings.oc', OcJda, 'oc', 'shippings.piName = oc.piname')
                 .where({ active: true })
                 .andWhere('colors.state = true')
-                .andWhere('oc.potpid = I');
+                .andWhere(new Brackets((qb) => {
+                    qb = qb.orWhere(`oc.potpid = 'I'`);
+                    qb = qb.orWhere(`oc.potpid IS NULL`);
+                }));
 
             if (!includeUnits0) {
                 query = query.andWhere('shippings.units<>0');
