@@ -9,6 +9,7 @@ import { ReportType } from '../shared/enums/reportType.enum';
 import { ComposeGuard } from '../shared/guards/auth.guard';
 import { GetUser } from '../shared/jwt/get-user.decorator';
 import { UserDecode } from '../shared/dtos/userDecode.entity';
+import { JdaOcReleaseDto } from './dtos/jdaOcRelease.dto';
 
 @Controller('report')
 @ApiTags('Report')
@@ -190,5 +191,14 @@ export class ReportController {
     async getProductEnhancementReport(@Body() dto: FilterApprovalDto, @GetUser() user: UserDecode): Promise<any> {
         this.reportService.generateProductEnhancementReport(dto, user?.id || 0);
     }
-
+    
+    @Post('jdaOcRelease')
+    @UseGuards(ComposeGuard)
+    @ApiOkResponse({
+        description: 'Servicio para generar Reporte de Liberación de Odernes de Compra',
+    })
+    @ApiBody({ type: JdaOcReleaseDto })
+    async generateJdaOcReleaseReport(@Body() dto: JdaOcReleaseDto, @GetUser() user: UserDecode): Promise<any> {
+        this.reportService.generateJdaOcReleaseReport(dto, user);
+    }
 }

@@ -1,7 +1,8 @@
 import { Controller, Post, Get, Param, UseGuards, Body } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { ResponseApi } from '../jdasku/dtos/responseApi.entity';
 import { ComposeGuard } from '../shared/guards/auth.guard';
+import { GetUser } from '../shared/jwt/get-user.decorator';
 import { JdaOcDto } from './dtos/jdaoc.dto';
 import { JdaOcFilterDto } from './dtos/jdaocFilter.dto';
 import { JdaOcService } from './service/jdaoc.service';
@@ -40,6 +41,14 @@ export class JdaocController {
         return await this.jdaocService.jdaOcNumbers();
     }
 
+    @Get('released-jdaoc-numbers')
+    @ApiOkResponse({
+        description: 'Servicio para obtener los números de ordenes de compra liberadas',
+    })
+    async releasedJdaOcNumbers(): Promise<number[]> {
+        return await this.jdaocService.releasedJdaOcNumbers();
+    }
+
     @Post('jdaoc-by-filter')
     @ApiOkResponse({
         description: 'Servicio para obtener las ordenes de compra por filtro',
@@ -66,4 +75,13 @@ export class JdaocController {
         return {status: 200, data: response};
     }
 
+    @Post('jdaoc-release')
+    @ApiBody({ isArray: true, type: 'string' })
+    @ApiOkResponse({
+        description: 'Servicio para liberar ordenes de compra',
+    })
+    async jdaOcRelease(@Body() dto: string[], @GetUser() user): Promise<ResponseApi<number>> {
+        const response = await this.jdaocService.jdaOcRelease(dto, user);
+        return { status: 200, data: response };
+    }
 }

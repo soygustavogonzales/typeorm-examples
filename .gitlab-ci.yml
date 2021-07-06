@@ -103,6 +103,7 @@ dockerize:
       sed -i "s|<AS400USER>|$AS400USER|" ./k8s/secrets.yaml
       sed -i "s|<AS400PASS>|$AS400PASS|" ./k8s/secrets.yaml
       sed -i "s|<AS400PGMSKU>|$AS400PGMSKU|" ./k8s/secrets.yaml
+      sed -i "s|<AS400PGMOC>|$AS400PGMOC|" ./k8s/secrets.yaml
       sed -i "s|<JWT_SECRET>|$JWT_SECRET|" ./k8s/secrets.yaml
       sed -i "s|<JWT_EXPIRYIN>|$JWT_EXPIRYIN|" ./k8s/configmap.yaml
       sed -i "s|<NEW_RELIC_APP_NAME>|$NEW_RELIC_APP_NAME|" ./k8s/configmap.yaml

@@ -1,8 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as _ from 'lodash';
 import { Repository } from 'typeorm';
-import { Provider } from '../../entities/provider.entity';
 import { StyleProxyService } from '../../external-services/style-proxy/style-proxy.service';
 import { JdaOcDto } from '../dtos/jdaoc.dto';
 import { JdaOcFilterDto } from '../dtos/jdaocFilter.dto';
@@ -12,6 +11,9 @@ import { v4 as uuidv4 } from 'uuid';
 import * as AWS from 'aws-sdk';
 import { AwsS3 } from '../../shared/class/AwsS3';
 import { ConfigService } from 'nestjs-config';
+import { UserDecode } from '../../shared/dtos/userDecode.entity';
+import { OcJdaMbr } from '../../entities/ocJdaMbr.entity';
+import { OcJda } from '../../entities/ocJda.entity';
 
 
 @Injectable()
@@ -20,10 +22,13 @@ export class JdaOcService {
     private AWS_S3_BUCKET_NAME: string;
     private s3: AWS.S3;
     private pool: any;
+    private pgmOcRelease: any;
 
     constructor(
-        @InjectRepository(Provider)
-        private readonly providerRepository: Repository<Provider>,
+        @InjectRepository(OcJdaMbr)
+        private readonly ocJdaMbrRepository: Repository<OcJdaMbr>,
+        @InjectRepository(OcJda)
+        private readonly ocJdaRepository: Repository<OcJda>,
         private styleService: StyleProxyService,
         private config: ConfigService,)
         { 
@@ -45,9 +50,63 @@ export class JdaOcService {
                 password: process.env.AS400PASS,
             };
 
-            this.pool = require('node-jt400').pool(dbconfig);            
+            this.pool = require('node-jt400').pool(dbconfig);    
+            this.pgmOcRelease = this.pool.defineProgram({
+                programName: process.env.AS400PGMOC,
+                paramsSchema: [
+                    { type: 'CHAR', precision: 32, scale: 0, name: 'Member' },
+                ],
+                libraryName: 'MMSP4PGM',
+            });        
         } catch (error) {
             this.logger.error(error);
+        }
+    }
+
+    async jdaOcRelease(ocNumbers: string[], user: UserDecode): Promise<number> {
+        try {
+            if (ocNumbers.length <= 0) { return -1 }
+            let sqlQuery = `SELECT PONOT1, PONUMB, POVNUM, PODEST, POSTOR, PODPT, POEDAT, POCOST, POTPID
+                            FROM mmsp4lib.POMHDR
+                            WHERE PONUMB IN (${ocNumbers.join(',')})`;
+            const ocs = await this.pool.query(sqlQuery);
+            if (ocs.length === 0) { return -1; } 
+
+            const sequence = await this.ocJdaMbrRepository.query(`SELECT * from public."oc_jda_mbr_id_seq"`);
+            const ocJdaMbr = await this.ocJdaMbrRepository.save({ jdaMember: `E${((sequence[0].is_called) ? (parseInt(sequence[0].last_value, 10) + 1).toString() : sequence[0].last_value).padStart(9, '0')}`, userId: user.id });
+
+            await Promise.all(ocs.map(async oc => {
+                const ocJda = await this.ocJdaRepository.findOne({ where: { ponumb: oc.PONUMB } });
+                if (ocJda) {
+                    ocJda.pocost = oc.POCOST;
+                    ocJda.potpid = oc.POTPID;
+                    ocJda.ocJdaMbr = ocJdaMbr;
+                    return await this.ocJdaRepository.save(ocJda);
+                } else {
+                    return await this.ocJdaRepository.save({
+                        ponot1: oc.PONOT1,
+                        ponumb: oc.PONUMB,
+                        povnum: oc.POVNUM,
+                        podest: oc.PODEST,
+                        postor: oc.POSTOR,
+                        podpt: oc.PODPT,
+                        poedat: oc.POEDAT,
+                        pocost: oc.POCOST,
+                        potpid: oc.POTPID,
+                        ocJdaMbrId: ocJdaMbr.id
+                    });
+                }
+            }));
+            
+            await this.pool.update(`CALL QSYS.QCMDEXC('ADDPFM FILE(MMSP4LIB/WORKFILE1) MBR(${ocJdaMbr.jdaMember})', 0000000047.00000)`);
+            await this.pool.update(`CALL QSYS.QCMDEXC('OVRDBF FILE(WORKFILE1) TOFILE(MMSP4LIB/WORKFILE1) MBR(${ocJdaMbr.jdaMember}) OVRSCOPE(*JOB)', 0000000080.00000)`);
+            const response = await this.pool.update(`INSERT INTO MMSP4LIB.WORKFILE1 VALUES('${ocNumbers.join('\'),(\'')}')`);
+            await this.pgmOcRelease({ Member: ocJdaMbr.jdaMember }, 10);
+
+            return response;
+        } catch (error) {
+            this.logger.error(error.message);
+            throw new BadRequestException(error.message);
         }
     }
     
@@ -62,8 +121,22 @@ export class JdaOcService {
         }
         return [];
     }
+    
+    async releasedJdaOcNumbers(): Promise<number[]> {
+        try {
+            let ocNumbers = await this.ocJdaRepository.createQueryBuilder('oc')
+                .where('oc.ocJdaMbr IS NOT NULL')
+                .select(['ponumb'])
+                .getRawMany();
 
-    async jdaOcByFilter(filter: JdaOcFilterDto): Promise<JdaOcDto[]> {
+            return ocNumbers.map(o => o.ponumb);
+        } catch (error) {
+            this.logger.error(error);
+        }
+        return [];
+    }
+
+    async jdaOcByFilter(filter: JdaOcFilterDto): Promise<JdaOcDto[]> { 
         try {
             let sqlQuery = `SELECT p.PONUMB, p.POVNUM, a.AANAME, p.POSTOR, p.PODPT, p.POEDAT, p.POCOST, p.PORETL, p.POUNTS, p.POMTYP
                             FROM mmsp4lib.POMHDR p
@@ -117,10 +190,11 @@ export class JdaOcService {
             const departments = {};
             const departmentJdaCodes = _.uniq(ocs.map(o => o.PODPT));
             const responseDepartments = await this.styleService.getDepartmentsByCodeDepartmentCountry(departmentJdaCodes);
-            responseDepartments.forEach(item => { departments[item.codeChile] = item.name; });
+            responseDepartments.forEach(item => { departments[item.codeChile] = {name: item.name, limit: item.costCap}; });
 
             return ocs.map(oc => {
                 let distributionType = '';
+                const limit = departments[oc.PODPT]?.limit || 0;
                 if (oc.POMTYP && oc.POMTYP === 'S') {
                     distributionType = 'STOCK';
                 } else if (oc.POMTYP && oc.POMTYP === 'P') {
@@ -131,13 +205,14 @@ export class JdaOcService {
                     ocNumber: oc.PONUMB,
                     provider: oc.AANAME,
                     destinationWinery: oc.POSTOR,
-                    department: departments[oc.PODPT] || '',
+                    department: departments[oc.PODPT]?.name || '',
                     creationDate: moment(oc.POEDAT, 'YYMMDD').toDate(),
                     totalCost: oc.POCOST,
                     totalRetail: oc.PORETL,
                     totalUnits: oc.POUNTS,
                     conversionRate: rates[oc.PONUMB] || 0,
-                    distributionType
+                    distributionType,
+                    status: limit === 0 ? 'PL' : oc.POCOST > limit ? 'HP' : 'PL'
                 }
             });
         } catch (error) {

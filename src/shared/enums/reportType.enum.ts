@@ -4,5 +4,6 @@ export enum ReportType {
     ProformPI = 3,
     PurchaseOrder = 4,
     Sku = 5,
-    ProductEnhancement = 6
+    ProductEnhancement = 6,
+    JdaOcRelease = 7
 }
