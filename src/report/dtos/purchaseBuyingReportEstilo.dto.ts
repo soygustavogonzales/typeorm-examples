@@ -15,6 +15,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
             division: 'DIVISION',
             departmentCode: 'ID DEPT',
             department: 'DEPT',
+            subDepartmentCode: 'ID SUB DEPT',
+            subDepartment: 'SUB DEPT',
             classTypeCode: 'CLASS',
             classType: 'CLASS DESC',
             providerCode: 'VENDOR',
@@ -117,6 +119,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                             const shippingOcs = ocs.filter(o => o.piname === shipping.piName);
                             const cbm = parseFloat(styleData.cbm).toFixed(4);
                             const iva = (purchaseStyle.purchaseStore.store.destinyCountry.iva)/100;
+                            console.log("styleData", styleData);
                             this.dataToExport.push({
                                 status: color.status.name,
                                 season: purchaseStyle.purchaseStore.purchase.seasonCommercial.name,
@@ -126,6 +129,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 division: styleData.division,
                                 departmentCode: styleData.departmentCode,
                                 department: styleData.department,
+                                subDepartmentCode: styleData.subDepartmentCode,
+                                subDepartment: styleData.subDepartment,
                                 classTypeCode: styleData.classTypeCode,
                                 classType: styleData.classType,
                                 providerCode: detailsData.providers[styleDetails.providerId]?.codeJda || '',
