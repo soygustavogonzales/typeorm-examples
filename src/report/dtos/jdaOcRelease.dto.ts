@@ -2,7 +2,13 @@ import { ApiProperty } from '@nestjs/swagger';
 import { DateRangeDto } from '../../shared/dtos/dateRange.dto';
 
 
-export class JdaOcFilterDto {
+export class JdaOcReleaseDto {
+  @ApiProperty({
+    description: 'Id de la subscription al reporte',
+    example: '036e4e04-10e6-4cf5-a830-084033aaa751',
+  })
+  subscriptionId: string;
+
   @ApiProperty({
     description: 'Ids de departamentos',
     example: [],
@@ -25,9 +31,16 @@ export class JdaOcFilterDto {
   ocs: number[];
   
   @ApiProperty({
-    description: 'Rango de fechas de creación de ordenes de compras',
+    description: 'Rango de fechas de liberación de ordenes de compras',
     example: {},
     isArray: false,
   })
   range: DateRangeDto;
+
+  @ApiProperty({
+    description: 'Ids de los usuarios',
+    example: [],
+    isArray: true,
+  })
+  users: number[];
 }
