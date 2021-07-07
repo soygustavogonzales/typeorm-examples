@@ -1535,7 +1535,7 @@ export class ReportService {
                 const styleProviderNameReference = stylesShippings[0].providerName;
                 const styleDataReference = stylesData.find(s => s.id === stylesShippings[0].styleId);
     
-                const ocNameFile = `OIA${styleDataReference.brandCode}${stylesShippings[0].shipping}${(Math.random() * 1000).toFixed().padStart(3, '0')}`;
+                const ocNameFile = `OIA${(Math.random() * 9999999).toFixed().padStart(7, '0')}`;
                 response.push({ piName, ocNameFile });
     
                 const requestReport = this.getNewRequestReport({ 
