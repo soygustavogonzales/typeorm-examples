@@ -283,8 +283,9 @@ export class JdaskuService {
                     .leftJoinAndSelect('detail.provider', 'provider')
                     .leftJoinAndSelect('provider.originCountry', 'originCountry')
                     .leftJoinAndSelect('detail.size', 'size')
+                    .leftJoinAndSelect('detail.exhibition', 'exhibition')
                     .leftJoinAndSelect('detail.ratio', 'ratio')
-                    .leftJoinAndSelect('detail.packingMethod', 'packingMethod')
+                    // .leftJoinAndSelect('detail.packingMethod', 'packingMethod')
                     .leftJoinAndSelect('purchase.status', 'status')
                     .where(mainWhere)
                     .andWhere('style.active=:active', { active: true })
@@ -405,8 +406,8 @@ export class JdaskuService {
 
     pushJdaSkuInterface(style: StyleDto, sku: Sku): JdaSkuInterface {
         let codigoManejoJda: string = '0';
-        if (style.details?.packingMethod.name.includes('|')) {
-            [, codigoManejoJda] = style.details.packingMethod.name.split('|');
+        if (style.details?.exhibition.name.includes('|')) {
+            [, codigoManejoJda] = style.details.exhibition.name.split('|');
         }
 
         return {
