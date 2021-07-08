@@ -14,7 +14,6 @@ export class JdaskusyncService {
     // Create a logger instance
     private logger = new Logger('JdaskusyncService');
     private pool: any;
-    private pgmCreateSku: any;
 
     constructor(
         @InjectRepository(Sku)
@@ -33,13 +32,6 @@ export class JdaskusyncService {
         };
 
         this.pool = require('node-jt400').pool(dbconfig);
-        this.pgmCreateSku = this.pool.defineProgram({
-            programName: process.env.AS400PGMSKU,
-            paramsSchema: [
-                { type: 'CHAR', precision: 32, scale: 0, name: 'Member' },
-            ],
-            libraryName: 'MMSP4PGM', // Optional. Defaults to *LIBL
-        });
     }
 
     async jdasync() {
