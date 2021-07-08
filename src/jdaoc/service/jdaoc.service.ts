@@ -121,6 +121,20 @@ export class JdaOcService {
         }
         return [];
     }
+    
+    async releasedJdaOcNumbers(): Promise<number[]> {
+        try {
+            let ocNumbers = await this.ocJdaRepository.createQueryBuilder('oc')
+                .where('oc.ocJdaMbr IS NOT NULL')
+                .select(['ponumb'])
+                .getRawMany();
+
+            return ocNumbers.map(o => o.ponumb);
+        } catch (error) {
+            this.logger.error(error);
+        }
+        return [];
+    }
 
     async jdaOcByFilter(filter: JdaOcFilterDto): Promise<JdaOcDto[]> { 
         try {

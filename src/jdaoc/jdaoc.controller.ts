@@ -41,6 +41,14 @@ export class JdaocController {
         return await this.jdaocService.jdaOcNumbers();
     }
 
+    @Get('released-jdaoc-numbers')
+    @ApiOkResponse({
+        description: 'Servicio para obtener los números de ordenes de compra liberadas',
+    })
+    async releasedJdaOcNumbers(): Promise<number[]> {
+        return await this.jdaocService.releasedJdaOcNumbers();
+    }
+
     @Post('jdaoc-by-filter')
     @ApiOkResponse({
         description: 'Servicio para obtener las ordenes de compra por filtro',

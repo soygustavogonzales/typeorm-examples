@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger, Req, Res } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PurchaseStyleService } from '../../purchase-style/services/purchase-style.service';
 import * as _ from 'lodash';
 import { ConfigService } from 'nestjs-config';
@@ -11,7 +11,7 @@ import { RoleType } from '../../shared/enums/role.enum';
 import moment = require('moment');
 import { PurchaseStyleColorShipping } from '../../entities/purchaseStyleColorShipping.entity';
 import * as XLSX from '@sheet/image';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { RequestReport } from '../../entities/requestReport.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StatusPurchaseColorEnum } from '../../shared/enums/statusPurchaseColor.enum';
@@ -26,40 +26,56 @@ import { StyleProxyService } from '../../external-services/style-proxy/style-pro
 import { PurchaseBuyingReportEstilo } from '../dtos/purchaseBuyingReportEstilo.dto';
 import { PurchaseBuyingReport } from '../dtos/purchaseBuyingReport.dto';
 import { PurchaseBuyingReportSku } from '../dtos/purchaseBuyingReportSku.dto';
-import { PurchaseStyle } from '../../entities/purchaseStyle.entity';
 import { StoreService } from '../../store/service/store.service';
+import { AwsS3 } from '../../shared/class/AwsS3';
+import { JdaOcReleaseDto } from '../dtos/jdaOcRelease.dto';
+import { OcJda } from '../../entities/ocJda.entity';
 
 @Injectable()
 export class ReportService {
     private logger = new Logger('ReportService');
     private AWS_S3_BUCKET_NAME: string;
     private s3: AWS.S3;
-    // approvedUrl: Map<number, IDataReport[]> = new Map<number, IDataReport[]>();
-    // orderRecapUrl: Map<number, IDataReport[]> = new Map<number, IDataReport[]>();
-    // proformsInvoiceUrls: Map<number, IDataReport[]> = new Map<number, IDataReport[]>();
+    private pool: any;
 
     constructor(
+        @InjectRepository(RequestReport)
+        private readonly requestReporRepository: Repository<RequestReport>,
+        @InjectRepository(OcJda)
+        private readonly ocJdaRepository: Repository<OcJda>,
         private purchaseStyleService: PurchaseStyleService,
         private securityProxyService: SecurityProxyService,
         private styleProxyService: StyleProxyService,
-        private paymentTermsProxyService: PaymentTermsService,
-        @InjectRepository(RequestReport)
-        private readonly requestReporRepository: Repository<RequestReport>,
+        private paymentTermsProxyService: PaymentTermsService,        
         private config: ConfigService,
         private skuService: JdaskuService,
         private dollarService: DollarService,
         private notificationPublisherService: NotificationPublisherService,
-        @InjectRepository(PurchaseStyle)
-        private readonly purchaseStyleRepository: Repository<PurchaseStyle>,
         private storeService: StoreService,
         ) {
-        this.AWS_S3_BUCKET_NAME = this.config.get('aws').aws_s3_bucket_name;
-        AWS.config.update({
-            accessKeyId: this.config.get('aws').aws_access_key_id,
-            secretAccessKey: this.config.get('aws').aws_secret_access_key,
-        });
-        this.s3 = new AWS.S3();
+            this.connect(); 
+            this.AWS_S3_BUCKET_NAME = this.config.get('aws').aws_s3_bucket_name;
+            AWS.config.update({
+                accessKeyId: this.config.get('aws').aws_access_key_id,
+                secretAccessKey: this.config.get('aws').aws_secret_access_key,
+            });
+            this.s3 = new AWS.S3();
     }
+
+    async connect() {
+        try {
+            const dbconfig = {
+                host: process.env.AS400HOST,
+                user: process.env.AS400USER,
+                password: process.env.AS400PASS,
+            };
+
+            this.pool = require('node-jt400').pool(dbconfig);     
+        } catch (error) {
+            this.logger.error(error);
+        }
+    }
+
     async getReportUrl(subscriptionId: string): Promise<RequestReport[]> {
         //this.logger.debug(`Get Report ${reportType} from user ${userId}`, 'getReportUrl');
         const requestReports = await this.requestReporRepository.find({ where: { subscriptionId } });
@@ -69,11 +85,13 @@ export class ReportService {
             return null;
         }
     }
+
     async stopGetReportUrl(subscriptionId: string) {
         // this.logger.debug('init stopGetReportUrl ');
         await this.requestReporRepository.softDelete({ subscriptionId });
         // this.logger.debug('end stopGetReportUrl ');
     }
+
     getNewRequestReport(data: { status: string; url: string; name: string; subscriptionId: string; userId?: number; reportType: ReportType; }): RequestReport {
         const requestReport = new RequestReport();
         requestReport.reportType = data.reportType;
@@ -1517,7 +1535,7 @@ export class ReportService {
                 const styleProviderNameReference = stylesShippings[0].providerName;
                 const styleDataReference = stylesData.find(s => s.id === stylesShippings[0].styleId);
     
-                const ocNameFile = `OIA${styleDataReference.brandCode}${stylesShippings[0].shipping}${(Math.random() * 1000).toFixed().padStart(3, '0')}`;
+                const ocNameFile = `OIA${(Math.random() * 9999999).toFixed().padStart(7, '0')}`;
                 response.push({ piName, ocNameFile });
     
                 const requestReport = this.getNewRequestReport({ 
@@ -1817,5 +1835,118 @@ export class ReportService {
         } catch (error) {
             console.log(error);
         }
+    }
+
+    async generateJdaOcReleaseReport(filter: JdaOcReleaseDto, user: UserDecode): Promise<boolean> {
+        try {
+            this.logger.debug(`Generate Jda OC Release Report from user ${user.id}`, 'generateJdaOcReleaseReport: start');
+            const requestReport = this.getNewRequestReport({ 
+                status: 'Pending', 
+                url: '', name: '', 
+                subscriptionId : filter.subscriptionId, 
+                userId: user.id, 
+                reportType: ReportType.JdaOcRelease
+            });
+            await this.requestReporRepository.save(requestReport);
+
+            let query = this.ocJdaRepository.createQueryBuilder('oc')
+                .innerJoinAndSelect('oc.ocJdaMbr', 'jdaMbr');
+
+            if (filter.range && filter.range.start && filter.range.end && filter.range.start < filter.range.end) {
+                query = query.andWhere(`jdaMbr.createDate BETWEEN '${filter.range.start}' AND '${filter.range.end}'`);
+            }
+            if (filter.users && filter.users.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.users.forEach((user) => {
+                            qb = qb.orWhere('jdaMbr.userId=' + user);
+                        });
+                    }));
+            }
+            if (filter.ocs && filter.ocs.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.ocs.forEach((oc) => {
+                            qb = qb.orWhere('oc.ponumb=' + oc);
+                        });
+                    }));
+            }
+            if (filter.providers && filter.providers.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.providers.forEach((provider) => {
+                            qb = qb.orWhere('oc.povnum=' + provider);
+                        });
+                    }));
+            }
+            if (filter.departments && filter.departments.length > 0) {
+                const departments = await this.styleProxyService.getDepartmentDataByIds(filter.departments);
+                const departmentNumbers = departments.map(d => d.codeChile);
+                if (departmentNumbers.length > 0) {
+                    query = query.andWhere(
+                        new Brackets((qb) => {
+                            departmentNumbers.forEach((deptoCode) => {
+                                qb = qb.orWhere('oc.podpt=' + deptoCode);
+                            });
+                        }));
+                }
+            }
+            
+            const ocs = await query.getRawMany();
+            if (ocs.length === 0) { 
+                requestReport.status = 'No Data';
+                requestReport.url = '';
+                requestReport.name = 'JdaOcReleaseReport';
+                await this.requestReporRepository.save(requestReport);
+                return null;
+            } 
+
+            const providers = {};
+            const providerIds = _.uniq(ocs.map(o => o.oc_povnum));
+            const sqlQuery = `SELECT a.AANUM, a.AANAME FROM exisbugd.APADDR a WHERE a.AANUM IN (${providerIds.join(',')})`;
+            const providersJda = await this.pool.query(sqlQuery);
+            providersJda.forEach(item => { providers[item.AANUM] = item.AANAME });
+
+            const users = {};
+            const usersIds = _.uniq(ocs.map(o => o.jdaMbr_userId));
+            const styleUsers = await this.securityProxyService.getUsers({ ids: usersIds, departments: [], roles: [] });
+            styleUsers.forEach(item => { users[item.id] = `${item.firstName} ${item.lastName}` });
+
+            const data = ocs.map(oc => {
+                return {
+                    ponumb: oc.oc_ponumb,
+                    date: moment(oc.jdaMbr_createDate).format('DD-MMM-yyyy, h:mm:ss a'),
+                    user: users[oc.jdaMbr_userId] || '',
+                    provider: providers[oc.oc_povnum] || '',
+                    cost: oc.oc_pocost
+                }
+            });
+
+            const headers = {
+                ponumb: 'OC NUMBER',
+                date: 'DATETIME',
+                user: 'USER',
+                provider: 'PROVIDER',
+                cost: 'COST'
+            };
+
+            const ws = XLSX.utils.json_to_sheet([headers, ...data], { skipHeader: true });
+            const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
+            const bufferFile = Buffer.from(csv, 'utf8');
+            const name = `JdaOcReleaseReport_${uuidv4()}.csv`;
+            const S3 = new AwsS3(this.s3, this.AWS_S3_BUCKET_NAME);
+            const url = await S3.uploadFile(bufferFile, name, 'text/csv', 10800, this.logger);
+
+            requestReport.status = 'Complete';
+            requestReport.url = url;
+            requestReport.name = 'JdaOcReleaseReport';
+            await this.requestReporRepository.save(requestReport);
+            this.logger.debug(`Generate Jda OC Release Report from user ${user.id}`, 'generateJdaOcReleaseReport: end');
+
+            return true;
+        } catch (error) {
+            this.logger.error(error.message);
+        }
+        return null;
     }
 }
