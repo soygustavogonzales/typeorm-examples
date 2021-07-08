@@ -188,12 +188,6 @@ export class PurchaseStyleDetails {
     @ManyToOne(() => ExitPort, { nullable: true })
     exitPort: ExitPort;
 
-    @ManyToOne(() => Exhibition, { nullable: true })
-    exhibition: Exhibition;
-
-    @RelationId((purchaseStyle: PurchaseStyleDetails) => purchaseStyle.exhibition)
-    exhibitionId: number;
-
     @ManyToOne(() => PurchaseStyleNegotiation, { nullable: true })
     purchaseStyleNegotiation: PurchaseStyleNegotiation;
 
