@@ -28,7 +28,7 @@ commonAnnotations:
 
 configMapGenerator:
 - behavior: merge
-  files:
+  envs:
   - ../config.properties
   name: ecom-sync-svc-configmap
 
