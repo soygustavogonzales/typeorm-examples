@@ -1,20 +1,24 @@
 apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: <SERVICE_NAME>-hpa
+  name: ecom-sync-svc-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: <SERVICE_NAME>-deployment
-  minReplicas: <REPLICA_NUMBER>
+    name: ecom-sync-svc-deployment
+  minReplicas: 3
   maxReplicas: 6
   metrics:
   - type: Resource
     resource:
       name: memory
-      targetAverageUtilization: 80
+      target:
+        type: Utilization
+        averageUtilization: 81
   - type: Resource
     resource:
       name: cpu
-      targetAverageUtilization: 80
+      target:
+        type: Utilization
+        averageUtilization: 81

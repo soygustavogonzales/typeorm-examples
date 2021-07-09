@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecom-sync-svc-svc
+  labels:
+    area: txd
+    app: ecom-sync-svc
+    role: API
+    version: "1"
+    name: ecom-sync-svc
+spec:
+  ports:
+    - name: http
+      port: 5005
+      targetPort: 5005
+  selector:
+    name: ecom-sync-svc

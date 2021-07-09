@@ -8,6 +8,11 @@ include:
 
 image: registry.gitlab.com/cencosud-ds/utils/docker-images/node:12.19.0-alpine3.10
 
+include:
+  - project: 'cencosud-ds/utils/gitops-deploy'
+    ref: master
+    file: '.gitlab-ci-deploy-script.yml'
+
 cache:
   paths:
     - node_modules/
@@ -60,59 +65,67 @@ dockerize:
     - docker tag $IMAGE_TAG $CI_REGISTRY_IMAGE:airflow
     - docker push $CI_REGISTRY_IMAGE:airflow
 
-.deploy_script: &deploy_script
-  image:
-    name: registry.gitlab.com/cencosud-ds/arquitectura-plataforma/tools/aws-terraform-kubectl:latest
-    entrypoint:
-      - '/usr/bin/env'
-      - 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
-  before_script:
-    - aws configure set default.region ${AWS_REGION}
-    - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+# Nombre del job
+.deploy_script: &deploy_script 
+  # Indicamos que queremos heredar la configuración del script de deploy que incluímos en el fragmento anterior
+  # Recordar descartar el anterior.
+  extends: .deploy
   script:
+    # Ingresamos al path
+    - cd $KUSTOMIZE_PATH
+    # Generamos una variable que contenga la url de la imagen docker, rama y ejecución del mismo pipeline 
+    # NOTA: En el stage de docker debe existir de igual manera.
+    - export TAG="$CI_COMMIT_REF_NAME-$CI_PIPELINE_IID-$CI_COMMIT_SHORT_SHA"
+    - export IMAGE_TAG="$CI_REGISTRY_IMAGE:$TAG"
+    # Establecemos la imagen en kustomize.
+    - kustomize edit set image ${IMAGE_TAG}
+    # Generamos el/los secreto(s) necesario(s) que tienen que coincidir con el deployment.
+    # Recordar hacerlo con el mismo con los secretos adicionales de tu aplicación
+    - | 
+      kubectl create secret docker-registry gitlab-auth-${CI_PROJECT_NAME} \
+           --docker-server=${CI_REGISTRY} \
+           --docker-username=${CI_DEPLOY_USER} \
+           --docker-password=${CI_DEPLOY_PASSWORD} \
+           -n ${NAMESPACE} --dry-run=client -o yaml \
+           > /tmp/docker-pull-secrets.yaml
+    # Encriptamos el secreto con sealed secrets. La variable KUBESEAL_ENDPOINT aún no la definimos ojo!! 
+    - kubeseal --cert ${KUBESEAL_ENDPOINT} < /tmp/docker-pull-secrets.yaml > docker-pull-secrets.yaml -o yaml
+    # Añadimos el nuevo secreto encriptado a recurso a kustomize
+    - kustomize edit add resource docker-pull-secrets.yaml
+    # Secreto adicional
     - |
-      export SECRET=$(kubectl get secrets -n $NAMESPACE | grep gitlab-auth-$CI_PROJECT_NAME | head -1 | cut -d ' ' -f 1)
-      if [ "$SECRET" == "" ]; then
-        kubectl create secret docker-registry gitlab-auth-$CI_PROJECT_NAME \
-          --docker-server=$CI_REGISTRY \
-          --docker-username=$CI_DEPLOY_USER \
-          --docker-password=$CI_DEPLOY_PASSWORD -n $NAMESPACE
-        echo "secret name gitlab-auth-$CI_PROJECT_NAME"
-      fi
-    - |
-      sed -i "s|<SERVICE_NAME>|$SERVICE_NAME|" ./k8s/deployment.yaml ./k8s/service.yaml ./k8s/configmap.yaml ./k8s/hpa.yaml ./k8s/secrets.yaml
-      sed -i "s|<REGISTRY_AUTH_NAME>|$REGISTRY_AUTH_NAME|" ./k8s/deployment.yaml
-      sed -i "s|<IMAGE_URL>|$CI_IMG_URL|" ./k8s/deployment.yaml
-      sed -i "s|<IMAGE_TAG>|$IMG_TAG|" ./k8s/deployment.yaml
-      sed -i "s|<AWS_ACCESS_KEY_ID>|$AWS_ACCESS_KEY_ID|" ./k8s/secrets.yaml
-      sed -i "s|<AWS_SECRET_ACCESS_KEY>|$AWS_SECRET_ACCESS_KEY|" ./k8s/secrets.yaml
-      sed -i "s|<TYPEORM_HOST>|$TYPEORM_HOST|" ./k8s/secrets.yaml
-      sed -i "s|<TYPEORM_PORT>|$TYPEORM_PORT|" ./k8s/secrets.yaml
-      sed -i "s|<TYPEORM_USERNAME>|$TYPEORM_USERNAME|" ./k8s/secrets.yaml
-      sed -i "s|<TYPEORM_PASSWORD>|$TYPEORM_PASSWORD|" ./k8s/secrets.yaml
-      sed -i "s|<TYPEORM_DATABASE>|$TYPEORM_DATABASE|" ./k8s/secrets.yaml
-      sed -i "s|<NODE_ENV>|$NODE_ENV|" ./k8s/configmap.yaml
-      sed -i "s|<CORS_ALLOWED_DOMAIN>|$CORS_ALLOWED_DOMAIN|" ./k8s/configmap.yaml
-      sed -i "s|<AWS_S3_BUCKET_NAME>|$AWS_S3_BUCKET_NAME|" ./k8s/configmap.yaml
-      sed -i "s|<AWS_SNS_TOPIC_ARN>|$AWS_SNS_TOPIC_ARN|" ./k8s/configmap.yaml ./k8s/secrets.yaml
-      sed -i "s|<API_SECURITY_KEY>|$API_SECURITY_KEY|" ./k8s/secrets.yaml
-      sed -i "s|<API_STYLES_KEY>|$API_STYLES_KEY|" ./k8s/secrets.yaml
-      sed -i "s|<AWS_QUEUE_SQS_JDA_SKU_SYNC_URL>|$AWS_QUEUE_SQS_JDA_SKU_SYNC_URL|" ./k8s/secrets.yaml
-      sed -i "s|<API_KEY>|$API_KEY|" ./k8s/secrets.yaml
-      sed -i "s|<AS400HOST>|$AS400HOST|" ./k8s/secrets.yaml
-      sed -i "s|<AS400USER>|$AS400USER|" ./k8s/secrets.yaml
-      sed -i "s|<AS400PASS>|$AS400PASS|" ./k8s/secrets.yaml
-      sed -i "s|<AS400PGMSKU>|$AS400PGMSKU|" ./k8s/secrets.yaml
-      sed -i "s|<AS400PGMOC>|$AS400PGMOC|" ./k8s/secrets.yaml
-      sed -i "s|<JWT_SECRET>|$JWT_SECRET|" ./k8s/secrets.yaml
-      sed -i "s|<JWT_EXPIRYIN>|$JWT_EXPIRYIN|" ./k8s/configmap.yaml
-      sed -i "s|<NEW_RELIC_APP_NAME>|$NEW_RELIC_APP_NAME|" ./k8s/configmap.yaml
-      sed -i "s|<REPLICA_NUMBER>|$REPLICA_NUMBER|" ./k8s/deployment.yaml ./k8s/hpa.yaml
+      kubectl -n $NAMESPACE create secret generic ${CI_PROJECT_NAME}-secrets \
+        --from-literal=TYPEORM_HOST=$TYPEORM_HOST \
+        --from-literal=TYPEORM_PORT="$TYPEORM_PORT" \
+        --from-literal=TYPEORM_USERNAME=$TYPEORM_USERNAME \
+        --from-literal=TYPEORM_PASSWORD=$TYPEORM_PASSWORD \
+        --from-literal=TYPEORM_DATABASE=$TYPEORM_DATABASE \
+        --from-literal=TYPEORM_LOGGING=schema \
+        --from-literal=JWT_SECRET=$JWT_SECRET \
+        --from-literal=API_KEY=$API_KEY \
+        --from-literal=AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+        --from-literal=AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+        --from-literal=API_SECURITY_KEY=$API_SECURITY_KEY \
+        --from-literal=API_STYLES_KEY=$API_STYLES_KEY \
+        --from-literal=AS400HOST=$AS400HOST \
+        --from-literal=AS400USER=$AS400USER \
+        --from-literal=AS400PASS=$AS400PASS \
+        --from-literal=AS400PGMSKU=$AS400PGMSKU \
+        --from-literal=AS400PGMOC=$AS400PGMOC \
+        --from-literal=AWS_REGION=$AWS_REGION \
+        --from-literal=AWS_QUEUE_SQS_JDA_SKU_SYNC_URL=$AWS_QUEUE_SQS_JDA_SKU_SYNC_URL \
+        -o yaml --dry-run=client > /tmp/$CI_PROJECT_NAME-secrets.yaml
+    # Encriptamos secreto adicional
+    - kubeseal --cert ${KUBESEAL_ENDPOINT} < /tmp/$CI_PROJECT_NAME-secrets.yaml > $CI_PROJECT_NAME-secret.yaml -o yaml
+    # Añadimos recursos a kustomize
+    - kustomize edit add resource $CI_PROJECT_NAME-secret.yaml
+    # Volvemos al directorio superior y subimos los cambios.
+    - cd ..
+    - git add .
+    - git commit -m "[skip ci] - Updating k8s manifests for ${CI_PROJECT_NAME} commit $CI_COMMIT_SHORT_SHA" || echo "No changes, nothing to commit!"
+    - git push origin HEAD:$CI_COMMIT_REF_NAME
 
-    - kubectl apply -n $NAMESPACE -f k8s/ --record=true
-
-
-paris-cl-ecosistema-compra-dev:
+Green Staging:
   <<: *deploy_script
   stage: staging deploy
   tags:
@@ -120,24 +133,18 @@ paris-cl-ecosistema-compra-dev:
     - staging
     - cache
   variables:
-    ENVIRONMENT: dev
-    REGISTRY_AUTH_NAME: gitlab-auth-${CI_PROJECT_NAME}
-    CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-sync-svc"
-    IMG_TAG: ${CI_COMMIT_REF_NAME}-${CI_PIPELINE_IID}-${CI_COMMIT_SHORT_SHA}
-    SECRET_NAME: ${CI_PROJECT_NAME}-secrets
+    # Path de la variante de kustomize
+    KUSTOMIZE_PATH: ./kustomize/overlays/staging/green
+    # Endpoint de kubeseal
+    KUBESEAL_ENDPOINT: ${PARISTECH_KUBESEAL_STAGING_ENDPOINT}
     NAMESPACE: paris-cl-ecosistema-compra
-    SERVICE_NAME: ${CI_PROJECT_NAME}
-    NODE_ENV: production
-    TARGET_ENV: dev
-    NEW_RELIC_APP_NAME: "${CI_PROJECT_NAME} Development"
-    REPLICA_NUMBER: 2
   only:
     - branches
   environment:
     name: dev
   when: manual
 
-paris-cl-ecosistema-compra-prod:
+Green Production:
   <<: *deploy_script
   stage: production deploy
   tags:
@@ -145,17 +152,11 @@ paris-cl-ecosistema-compra-prod:
     - production
     - cache
   variables:
-    ENVIRONMENT: production
-    REGISTRY_AUTH_NAME: gitlab-auth-${CI_PROJECT_NAME}
-    CI_IMG_URL: "registry.gitlab.com\\/cencosud-ds\\/ordenes-y-entrega\\/planning\\/ecom-sync-svc"
-    IMG_TAG: ${CI_COMMIT_REF_NAME}-${CI_PIPELINE_IID}-${CI_COMMIT_SHORT_SHA}
-    SECRET_NAME: ${CI_PROJECT_NAME}-secrets
+    # Path de la variante de kustomize
+    KUSTOMIZE_PATH: ./kustomize/overlays/production/green
+    # Endpoint de kubeseal
+    KUBESEAL_ENDPOINT: ${PARISTECH_KUBESEAL_PRODUCTION_ENDPOINT}
     NAMESPACE: paris-cl-ecosistema-compra
-    SERVICE_NAME: ${CI_PROJECT_NAME}
-    NODE_ENV: production
-    TARGET_ENV: production
-    NEW_RELIC_APP_NAME: "${CI_PROJECT_NAME} Production"
-    REPLICA_NUMBER: 3
   only:
     - master
   environment:

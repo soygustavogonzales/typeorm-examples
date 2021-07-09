@@ -1,0 +1,45 @@
+# kustomize build --load_restrictor none
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../../base
+- docker-pull-secrets.yaml
+- ecom-sync-svc-secret.yaml
+
+commonLabels:
+  app.paristech.io/cluster-name: green
+  app.paristech.io/component: ecom-sync
+  app.paristech.io/environment: staging
+  app.paristech.io/instance: ecom-sync-svc
+  app.paristech.io/managed-by: argocd
+  app.paristech.io/name: ecom-sync
+  app.paristech.io/part-of: paris-cl-ecosistema-compra
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+commonAnnotations:
+  team.paristech.io/developer: sebastian-matusdelaparra
+  team.paristech.io/owner: sebastian-matusdelaparra
+  team.paristech.io/product-name: paris-cl-ecosistema-compra
+  team.paristech.io/source-repo-url: https://gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
+
+configMapGenerator:
+- behavior: merge
+  files:
+  - ../config.properties
+  name: ecom-sync-svc-configmap
+
+patchesJson6902:
+- patch: |-
+    - op: replace
+      path: /data/NEW_RELIC_APP_NAME
+      value: "green-ecom-sync-svc Development"
+  target:
+    kind: ConfigMap
+    name: ecom-sync-svc-configmap
+    version: v1
+images:
+- name: registry.gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
+  newTag: k8s-migration-98-f261d50a
