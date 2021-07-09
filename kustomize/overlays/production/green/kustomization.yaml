@@ -1,64 +1,69 @@
 # kustomize build --load_restrictor none
-apiVersion: kustomize.config.k8s.io/v1beta1 # apiVersion de kustomize
-kind: Kustomization # Especificamos que es una kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 
-resources: # Especificamos los recursos que vamos a re-utilizar
-  - ../../../base
+resources:
+- ../../../base
+- docker-pull-secrets.yaml
+- ecom-sync-svc-secret.yaml
 
-commonLabels: # commonLabels añade todas etiquetas a todos los recursos definidos en `resources` y los utiliza como selectores
-  app.paristech.io/environment: production
-  app.paristech.io/cluster-name: green
-  app.paristech.io/name: ecom-sync
-  app.paristech.io/instance: ecom-sync-svc
   # app.paristech.io/version: "x.x.xxx"
+commonLabels:
+  app.paristech.io/cluster-name: green
   app.paristech.io/component: ecom-sync
-  app.paristech.io/part-of: paris-cl-ecosistema-compra
+  app.paristech.io/environment: production
+  app.paristech.io/instance: ecom-sync-svc
   app.paristech.io/managed-by: argocd
+  app.paristech.io/name: ecom-sync
+  app.paristech.io/part-of: paris-cl-ecosistema-compra
 
-generatorOptions: # docs: https://kubectl.docs.kubernetes.io/references/kustomize/generatoroptions/
-  disableNameSuffixHash: true # Por defecto genera un hash para cada objeto el cual es complejo de manejar posteriormente, por eso prefiero deshabilitar este comportamiento
+generatorOptions:
+  disableNameSuffixHash: true
 
-commonAnnotations: # Añade anotaciones nuestros recursos con el objetivo de identificar el equipo responsable.
-  team.paristech.io/product-name: paris-cl-ecosistema-compra
-  team.paristech.io/owner: gonzalo-leyton
+commonAnnotations:
   team.paristech.io/developer: gonzalo-leyton
-  team.paristech.io/source-repo-url: "https://gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc"
+  team.paristech.io/owner: gonzalo-leyton
+  team.paristech.io/product-name: paris-cl-ecosistema-compra
+  team.paristech.io/source-repo-url: https://gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
 
 configMapGenerator:
-  - name: ecom-sync-svc-configmap
-    behavior: merge
-    files:
-      - ../config.properties
+- behavior: merge
+  files:
+  - ../config.properties
+  name: ecom-sync-svc-configmap
 
-patchesJson6902:
   # Añadimos esta seccion que sirve para realizar pequeñas modificaciones a manifiestos específicos.
   # En este caso realizaremos modificaciones a las anotaciones que nos sirven para balancear por DNS y cambios de host.
-  - target:
-      kind: Deployment
-      name: ecom-sync-svc-deployment
-      group: apps
-      version: v1
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 3
-  - target:
-      kind: HorizontalPodAutoscaler
-      name: ecom-sync-svc-hpa
-      group: autoscaling
-      version: v2beta2
-    patch: |-
-      - op: replace
-        path: /spec/minReplicas
-        value: 3
-      - op: replace
-        path: /spec/maxReplicas
-        value: 6
-  - patch: |-
-      - op: replace
-        path: /data/NEW_RELIC_APP_NAME
-        value: "green-ecom-sync-svc Production"
-    target:
-      kind: ConfigMap
-      name: ecom-sync-svc-configmap
-      version: v1
+patchesJson6902:
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 3
+  target:
+    group: apps
+    kind: Deployment
+    name: ecom-sync-svc-deployment
+    version: v1
+- patch: |-
+    - op: replace
+      path: /spec/minReplicas
+      value: 3
+    - op: replace
+      path: /spec/maxReplicas
+      value: 6
+  target:
+    group: autoscaling
+    kind: HorizontalPodAutoscaler
+    name: ecom-sync-svc-hpa
+    version: v2beta2
+- patch: |-
+    - op: replace
+      path: /data/NEW_RELIC_APP_NAME
+      value: "green-ecom-sync-svc Production"
+  target:
+    kind: ConfigMap
+    name: ecom-sync-svc-configmap
+    version: v1
+images:
+- name: registry.gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
+  newTag: master-206-dc36baee
