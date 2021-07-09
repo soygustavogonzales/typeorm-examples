@@ -11,6 +11,7 @@ import { Provider } from '../../entities/provider.entity';
 import { Packaging } from '../../entities/packaging.entity';
 import { Category } from '../../entities/category.entity';
 import { ExitPort } from '../../entities/exitPort.entity';
+import { Exhibition } from '../../entities/exhibition.entity';
 
 export class StyleDetails {
     id: number;
@@ -57,6 +58,8 @@ export class StyleDetails {
     origin: OriginCountry;
     packingMethod: Packaging;
     packingMethodId: number;
+    exhibition: Exhibition;
+    exhibitionId: number;
     category: Category;
     exitPort: ExitPort;
     createDate: Date;
