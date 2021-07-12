@@ -83,7 +83,8 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
             exitPortCode: 'EXIT PORT CODE',
             approvalDate: 'APPROVAL',
             ocJda: 'OC',
-            impNum: 'IMP NUM'
+            impNum: 'IMP NUM',
+            styleId: 'ID STYLE ECOSISTEMA'
         };
         this.processData(this.purchaseStyles, this.stylesData, this.styleSkus, this.users, this.ocs, this.detailsData);
     }
@@ -200,6 +201,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 approvalDate: purchaseStyle?.purchaseStore?.purchase?.approvalDate ? moment(purchaseStyle.purchaseStore.purchase.approvalDate).format('DD-MMM-yyyy') : '',
                                 ocJda: shippingOcs.map(oc => oc.ponumb).join('/'),
                                 impNum: shippingOcs[0] ? `${purchaseStyle.purchaseStore.store.impnumpfx}${shippingOcs[0].poedat.toString().substring(0, 4)}${shippingOcs[0].ponumb}` : null,
+                                styleId: styleData.id,
                             });
                         }
                     }
