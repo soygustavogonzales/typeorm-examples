@@ -80,10 +80,10 @@ export class PurchaseStyleOrderRecapDto {
         const designer = users?.find(u => u.id.toString() == styleDetails.designer);
         
         this.status = 'Confirmed';
-        this.season = purchaseStyle.purchaseStore.purchase.seasonCommercial.name;
+        this.season = purchaseStyle.purchaseStore.purchase.seasonCommercial?.name;
         // this.productSeason = styleData.seasonProduct,
         // this.tripDate = moment(purchaseStyle.purchaseStore.purchase.tripDate).format('MMM-yyyy'),
-        this.unit = purchaseStyle.purchaseStore.store.name;
+        this.unit = purchaseStyle.purchaseStore.store?.name;
         this.division = styleData.division;
         this.departmentCode = styleData.departmentCode;
         this.department = styleData.department;
@@ -124,9 +124,9 @@ export class PurchaseStyleOrderRecapDto {
         // this.productManager = productManager ? `${productManager.firstName} ${productManager.lastName}` : '' ,
         this.designer = designer ? `${designer.firstName} ${designer.lastName}` : '';
         this.piNumber = shipping.piName;
-        this.country = destinyCountry.name;
-        this.sticker = styleDetails.seasonSticker.name;
-        this.internetDescription = styleDetails.internetDescription;
+        this.country = destinyCountry?.name;
+        this.sticker = styleDetails?.seasonSticker?.name;
+        this.internetDescription = styleDetails?.internetDescription;
         // this.segment = styleDetails.segment?.name || '',
         this.delivery = shipping.shipping;
         this.units = shipping.units;
@@ -142,7 +142,7 @@ export class PurchaseStyleOrderRecapDto {
         // Group data
         this.brandId = styleData.brandId;
         this.departmentId = styleData.departmentId;
-        this.providerId = styleDetails.provider.id;
+        this.providerId = styleDetails.provider?.id;
     }
 }
 
