@@ -124,7 +124,12 @@ dockerize:
     - git add .
     - git commit -m "[skip ci] - Updating k8s manifests for ${CI_PROJECT_NAME} commit $CI_COMMIT_SHORT_SHA" || echo "No changes, nothing to commit!"
     - git push origin HEAD:$CI_COMMIT_REF_NAME
-
+    - |
+      if [ "$CI_ENVIRONMENT_NAME" == "dev" ]; then
+        argocd login argocd.ops.aws-test.paris.cl --grpc-web --username "$ARGOCD_SERVICE_USER" --password "$ARGOCD_SERVICE_PASSWORD"
+        argocd app set green-$CI_PROJECT_NAME --revision $CI_COMMIT_REF_NAME
+      fi
+      
 Green Staging:
   <<: *deploy_script
   stage: staging deploy
