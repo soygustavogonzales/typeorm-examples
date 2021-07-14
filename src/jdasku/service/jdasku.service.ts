@@ -285,7 +285,7 @@ export class JdaskuService {
                     .leftJoinAndSelect('detail.size', 'size')
                     .leftJoinAndSelect('detail.exhibition', 'exhibition')
                     .leftJoinAndSelect('detail.ratio', 'ratio')
-                    // .leftJoinAndSelect('detail.packingMethod', 'packingMethod')
+                    .leftJoinAndSelect('detail.packingMethod', 'packingMethod')
                     .leftJoinAndSelect('purchase.status', 'status')
                     .where(mainWhere)
                     .andWhere('style.active=:active', { active: true })
@@ -406,9 +406,12 @@ export class JdaskuService {
 
     pushJdaSkuInterface(style: StyleDto, sku: Sku): JdaSkuInterface {
         let codigoManejoJda: string = '0';
-        if (style.details?.exhibition.name.includes('|')) {
-            [, codigoManejoJda] = style.details.exhibition.name.split('|');
+        if (style.details?.packingMethod.name.includes('|')) {
+            [, codigoManejoJda] = style.details.packingMethod.name.split('|');
         }
+        // if (style.details?.exhibtion.name.includes('|')) {
+        //     [, codigoManejoJda] = style.details.exhibtion.name.split('|');
+        // }
 
         return {
             indicadorSkuEstilo: 1,
