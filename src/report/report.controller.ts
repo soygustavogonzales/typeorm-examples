@@ -10,6 +10,7 @@ import { ComposeGuard } from '../shared/guards/auth.guard';
 import { GetUser } from '../shared/jwt/get-user.decorator';
 import { UserDecode } from '../shared/dtos/userDecode.entity';
 import { JdaOcReleaseDto } from './dtos/jdaOcRelease.dto';
+import { FilterSustainabilityDto } from './dtos/filterSustainability.dto';
 
 @Controller('report')
 @ApiTags('Report')
@@ -200,5 +201,15 @@ export class ReportController {
     @ApiBody({ type: JdaOcReleaseDto })
     async generateJdaOcReleaseReport(@Body() dto: JdaOcReleaseDto, @GetUser() user: UserDecode): Promise<any> {
         this.reportService.generateJdaOcReleaseReport(dto, user);
+    }
+
+    @Post('sustainability')
+    @UseGuards(ComposeGuard)
+    @ApiOkResponse({
+        description: 'Servicio para generar Reporte de Sustentabilidad',
+    })
+    @ApiBody({ type: FilterSustainabilityDto })
+    async getSustainabilityReport(@Body() dto: FilterSustainabilityDto, @GetUser() user: UserDecode): Promise<any> {
+        return this.reportService.generateSustainabilityReport(dto, user?.id || 0);
     }
 }

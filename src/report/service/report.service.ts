@@ -30,6 +30,9 @@ import { StoreService } from '../../store/service/store.service';
 import { AwsS3 } from '../../shared/class/AwsS3';
 import { JdaOcReleaseDto } from '../dtos/jdaOcRelease.dto';
 import { OcJda } from '../../entities/ocJda.entity';
+import { FilterSustainabilityDto } from '../dtos/filterSustainability.dto';
+import { PurchaseStyle } from '../../entities/purchaseStyle.entity';
+import { Status } from '../../shared/enums/status.enum';
 
 @Injectable()
 export class ReportService {
@@ -43,6 +46,8 @@ export class ReportService {
         private readonly requestReporRepository: Repository<RequestReport>,
         @InjectRepository(OcJda)
         private readonly ocJdaRepository: Repository<OcJda>,
+        @InjectRepository(PurchaseStyle)
+        private readonly purchaseStyleRepository: Repository<PurchaseStyle>,
         private purchaseStyleService: PurchaseStyleService,
         private securityProxyService: SecurityProxyService,
         private styleProxyService: StyleProxyService,
@@ -1847,6 +1852,7 @@ export class ReportService {
                 userId: user.id, 
                 reportType: ReportType.JdaOcRelease
             });
+            
             await this.requestReporRepository.save(requestReport);
 
             let query = this.ocJdaRepository.createQueryBuilder('oc')
@@ -1948,5 +1954,273 @@ export class ReportService {
             this.logger.error(error.message);
         }
         return null;
+    }
+
+    async generateSustainabilityReport(dto: FilterSustainabilityDto, userId: number) {
+      try {
+        this.logger.debug(`Generate Report Sustainability from user ${userId}`, 'generateSustainabilityReport: start');
+        const subscriptionId = dto.subscriptionId;
+        
+        let query = this.purchaseStyleRepository.createQueryBuilder('purchaseStyle')
+        .leftJoin('purchaseStyle.colors', 'colors')
+        .leftJoin('colors.shippings', 'shippings')
+        // .leftJoinAndSelect('purchaseStyle.colors', 'colors')
+        // .leftJoinAndSelect('colors.shippings', 'shippings')
+        .leftJoin('purchaseStyle.details', 'purchaseDetails')
+        .leftJoin('purchaseDetails.category', 'category')
+        .leftJoin('purchaseDetails.origin', 'origin')
+        .leftJoin('purchaseDetails.provider', 'provider')
+        .leftJoin('purchaseDetails.certifications', 'certifications')
+        .leftJoin('purchaseStyle.purchaseStore', 'purchaseStore')
+        .leftJoin('purchaseStore.store', 'store')
+        .leftJoin('purchaseStore.purchase', 'purchase')
+        .leftJoin('purchase.seasonCommercial', 'seasonCommercial')
+        .leftJoin('purchase.status', 'purchaseStatus')
+        .leftJoin('purchaseStyle.status', 'styleStatus')
+            .select('purchaseStyle.id', 'id')
+                .addSelect('store.name', 'store')
+                .addSelect('purchaseStyle.styleId', 'styleId')
+                .addSelect('purchaseDetails.merchandiser', 'merchandiser')
+                .addSelect('category.name', 'category')
+                .addSelect('seasonCommercial.name', 'seasonCommercial')
+                .addSelect('origin.name', 'origin')
+                .addSelect('provider.name', 'provider')
+                .addSelect('purchaseDetails.composition', 'composition')
+                .addSelect('certifications.name', 'certifications')
+                .addSelect('colors', 'colors')
+                .addSelect('shippings', 'shippings')
+                // .addSelect('shippings.units', 'units')
+            .where({ active: true })
+            .andWhere('purchaseStyle.deleteDate IS NULL')
+            .andWhere('colors.state = true')
+            .andWhere(`purchaseStatus.id IN (${Status.Approvement})`);
+
+        if (dto.departments && dto.departments.length > 0) {
+            query = query.andWhere(
+            new Brackets((qb) => {
+                dto.departments.forEach((departmentId) => {
+                    qb = qb.orWhere(departmentId + '=ANY(purchase.departments)');
+                });
+            }));
+        }
+
+        if (dto.brands && dto.brands.length > 0) {
+            query = query.andWhere(
+                new Brackets((qb) => {
+                dto.brands.forEach((brandId) => {
+                    qb = qb.orWhere(brandId + '=ANY(purchase.brands)');
+                });
+                }));
+        }
+
+        if (dto.categories && dto.categories.length > 0) {
+            query = query.andWhere(
+                new Brackets((qb) => {
+                    dto.categories.forEach((categoryId) => {
+                        qb = qb.orWhere('category.id=' + categoryId);
+                    });
+                }));
+        }
+
+        // Get purchase data drom DB
+        const purchaseStyles = await query.getRawMany();
+
+        if (purchaseStyles.length <= 0) { return null; }
+        // Find styles from style service
+        const uniqStylesId = Array.from(new Set(purchaseStyles.map(p => p.styleId)));
+        let stylesData = uniqStylesId && uniqStylesId.length > 0 ? await this.styleProxyService.getStylesDataByIdsBatch(uniqStylesId) : [];
+
+        if (stylesData.length <= 0) { return null; }
+        // Apply filter to styles
+
+        if (dto.brands && dto.brands.length > 0) {
+            stylesData = stylesData.filter(s => dto.brands.indexOf(s.brandId) !== -1);
+        }
+
+        if (dto.departments && dto.departments.length > 0) {
+            stylesData = stylesData.filter(s => dto.departments.indexOf(s.departmentId) !== -1);
+        }
+
+        if (dto.classTypes && dto.classTypes.length > 0) {
+            stylesData = stylesData.filter(s => dto.classTypes.indexOf(s.classTypeId) !== -1);
+        }
+
+        // Find user from security service
+        const usersId = purchaseStyles.map(p => p.merchandiser);
+        const uniqUsersIds = _.uniq(usersId.map(user => {
+            const id = parseInt(user, null);
+            return id && !isNaN(id) ? id : -1;
+        }));
+        const usersData = uniqUsersIds && uniqUsersIds.length > 0 ? await this.securityProxyService.getUsers({ ids: uniqUsersIds, departments: [], roles: [] }) : [];
+
+        // Find sku
+        const styleIds = _.uniq(purchaseStyles.map(p => p.styleId)) as number[];
+        const allStyleSkus = await this.skuService.getSkuByStyle(styleIds);
+        
+        // Create static data set
+        const dataToExport = [];
+        const groupedStyles = _.chain(purchaseStyles).groupBy('styleId').map((value, key) => ({ styleId: parseInt(key, 10), purchaseStyles: value })).value();   
+     
+        groupedStyles.forEach(item => {
+            const style = stylesData.find(s => s.id === item.styleId);
+            const purchaseStyleDetail = _.first(item.purchaseStyles);
+            
+            // total units
+            const units = item.purchaseStyles.map(s => s.shippings_units).reduce((acum, currentValue) => {
+                return acum + currentValue;
+            })
+
+            let merchandiser = 'NO APLICA';
+            if (purchaseStyleDetail.merchandiser && purchaseStyleDetail.merchandiser !== '-1') {
+                const productManagerUser = usersData?.find(u => u.id === parseInt(purchaseStyleDetail.merchandiser, null) ?? -1);
+                merchandiser = productManagerUser ? `${productManagerUser.firstName} ${productManagerUser.lastName}` : purchaseStyleDetail.merchandiser;
+            }
+
+            if (style && purchaseStyleDetail) {
+                const rowStyleData = {
+                    estado: '', //campo vacio
+                    businessUnit: purchaseStyleDetail.store,
+                    sender: merchandiser,
+                    brand: style.brand,
+                    deparment: style.departmentCode,
+                    category: purchaseStyleDetail.category,
+                    product: style.articleType,
+                    season: purchaseStyleDetail.seasonCommercial,
+                    shipmentFlow: '',
+                    vendorsCountry: purchaseStyleDetail.origin,
+                    vendor: purchaseStyleDetail.provider,
+                    vendorTaxId: '', //campo vacio
+                    status: '', //campo vacio
+                    style: style.code,
+                    fabric: purchaseStyleDetail.composition,
+                    attributes: purchaseStyleDetail.certifications,
+                    percentageAttributes: '', //campo vacio
+                    unitsProduced: units,
+                    weightPerPiece: '', //campo vacio
+                    firstShipmentDate: '',
+                    stock: '', //campo vacio
+                    certificate: '', //campo vacio
+                    guaranteeLetter: '', //campo vacio
+                    nCertification: '', //campo vacio
+                    statusOne: '', //campo vacio
+                    certificationScope: '', //campo vacio
+                    statusTwo: '', //campo vacio
+                    validateDate: '', //campo vacio
+                    statusThree: '', //campo vacio
+                    consignee: '', //campo vacio
+                    statusFour: '', //campo vacio
+                    sewingFactory: '', //campo vacio
+                    sewingFactoryTaxId: '', //campo vacio
+                    statusFive: '', //campo vacio
+                    fabricFactory: '', //campo vacio
+                    statusSix: '', //campo vacio
+                    yarnFactory: '', //campo vacio
+                    statusSeven: '', //campo vacio
+                    remarks: '', //campo vacio
+                };
+
+                const sku = allStyleSkus.find(sku => sku.styleId === purchaseStyleDetail.styleId);
+                if (sku) {
+                    const skuColors = sku?.skuColor;
+                    for (const color of skuColors) {
+                        const skuColorSize = color?.skuColorSize;
+                        for (const size of skuColorSize) {
+                            dataToExport.push({
+                                sku: size.sku,
+                                ...rowStyleData,
+                            })
+                        }
+                    }
+                } else {
+                    dataToExport.push(rowStyleData);
+                }
+                // console.log(dataToExport)
+            }
+        })
+
+        if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
+            const requestReport = this.getNewRequestReport({ status: 'No Data', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement });
+            await this.requestReporRepository.save(requestReport);
+            return null;
+        }
+        const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement});
+
+        const headers = {
+            estado: 'ESTADO',
+            businessUnit: 'BUSINESS UNIT (Paris/ Supermarket)',
+            sender: 'SENDER',
+            brand: 'BRAND',
+            deparment: 'DEPARTMENT',
+            category: 'CATEGORY',
+            product: 'PRODUCT',
+            season: 'SEASON',
+            shipmentFlow: 'SHIPMENT FLOW',
+            vendorsCountry: 'VENDORS COUNTRY',
+            vendor: 'VENDOR',
+            vendorTaxId: 'VENDOR TAX ID',
+            status: 'STATUS',
+            sku: 'SKU',
+            style: 'STYLE',
+            fabric: 'FABRIC',
+            attributes: 'ATTRIBUTES',
+            percentageAttributes: '% ATTRIBUTE',
+            unitsProduced: 'UNITS PRODUCED',
+            weightPerPiece: 'WEIGHT PER PIECE (GRAMS)',
+            firstShipmentDate: 'FIRST SHIPMENT DATE',
+            stock: 'STOCK',
+            certificate: 'CERTIFICATE',
+            guaranteeLetter: 'GUARANTEE LETTER',
+            nCertification: 'N° CERTIFICATION',
+            statusOne: 'STOCK',
+            certificationScope: 'CERTIFICATION SCOPE',
+            statusTwo: 'STOCK',
+            validateDate: 'VALID DATE',
+            statusThree: 'STOCK',
+            consignee: 'CONSIGNEE',
+            statusFour: 'STOCK',
+            sewingFactory: 'SEWING FACTORY TAX ID',
+            sewingFactoryTaxId: 'SEWING FACTORY',
+            statusFive: 'STOCK',
+            fabricFactory: 'FABRICS FACTORY',
+            statusSix: 'STOCK',
+            yarnFactory: 'YARN FACTORY',
+            statusSeven: 'STOCK',
+            remarks: 'REMARKS',
+        };
+       
+      if (dataToExport.length > 0) {
+          /* make the worksheet */
+          const cleanData = [headers, ...dataToExport].filter(item => item !== null);
+          const ws = XLSX.utils.json_to_sheet([...cleanData], { skipHeader: true });
+          
+          /* write workbook (use type 'binary') */
+          const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
+          const bufferFile = Buffer.from(csv, 'latin1');
+          const name = `Sustentabilidad_${uuidv4()}.csv`;
+          await this.s3.putObject(
+              {
+                  Bucket: this.AWS_S3_BUCKET_NAME,
+                  Body: bufferFile,
+                  Key: `reports/${name}`,
+                  ContentType: 'text/csv',
+              },
+              async (error: AWS.AWSError, data: AWS.S3.PutObjectOutput) => {
+                  try {
+                          const params = { Bucket: this.AWS_S3_BUCKET_NAME, Key: `reports/${name}`, Expires: 10800 }; // 3 HR
+                          const url = await this.s3.getSignedUrl('getObject', params);
+                          requestReport.status = 'Complete';
+                          requestReport.url = url;
+                          requestReport.name = name;
+                          await this.requestReporRepository.save(requestReport);
+                  } catch (error) {
+                      this.logger.error(`CATCH Error cargando el archivo de reporte: ${error}`);    
+                  }
+              },
+          );
+        }  
+        
+      } catch (error) {
+          console.log(error);
+      }
     }
 }
