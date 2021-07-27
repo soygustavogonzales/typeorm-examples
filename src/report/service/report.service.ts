@@ -2070,6 +2070,13 @@ export class ReportService {
                 return acum + currentValue;
             })
 
+            // shipmentFlow
+            const stylesShipments = item.purchaseStyles.filter(u => u.shippings_units > 0 && u.shippings_units !== null);
+            const shipmentFlow = _.uniq(stylesShipments.map(s => (s.shippings_shipping)));
+
+            // first shipment date
+            const firstShipmentDate = _.first(_.orderBy(stylesShipments, s => s.shippings_date))?.shippings_shipping;
+
             let merchandiser = 'NO APLICA';
             if (purchaseStyleDetail.merchandiser && purchaseStyleDetail.merchandiser !== '-1') {
                 const productManagerUser = usersData?.find(u => u.id === parseInt(purchaseStyleDetail.merchandiser, null) ?? -1);
@@ -2082,11 +2089,11 @@ export class ReportService {
                     businessUnit: purchaseStyleDetail.store,
                     sender: merchandiser,
                     brand: style.brand,
-                    deparment: style.departmentCode,
+                    department: style.departmentCode,
                     category: purchaseStyleDetail.category,
                     product: style.articleType,
                     season: purchaseStyleDetail.seasonCommercial,
-                    shipmentFlow: '',
+                    shipmentFlow: shipmentFlow.join(','),
                     vendorsCountry: purchaseStyleDetail.origin,
                     vendor: purchaseStyleDetail.provider,
                     vendorTaxId: '', //campo vacio
@@ -2097,7 +2104,7 @@ export class ReportService {
                     percentageAttributes: '', //campo vacio
                     unitsProduced: units,
                     weightPerPiece: '', //campo vacio
-                    firstShipmentDate: '',
+                    firstShipmentDate: firstShipmentDate,
                     stock: '', //campo vacio
                     certificate: '', //campo vacio
                     guaranteeLetter: '', //campo vacio
@@ -2134,23 +2141,23 @@ export class ReportService {
                 } else {
                     dataToExport.push(rowStyleData);
                 }
-                // console.log(dataToExport)
+                console.log(dataToExport);
             }
         })
 
-        if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
-            const requestReport = this.getNewRequestReport({ status: 'No Data', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement });
-            await this.requestReporRepository.save(requestReport);
-            return null;
-        }
-        const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement});
+        // if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
+        //     const requestReport = this.getNewRequestReport({ status: 'No Data', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement });
+        //     await this.requestReporRepository.save(requestReport);
+        //     return null;
+        // }
+        // const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement});
 
         const headers = {
             estado: 'ESTADO',
             businessUnit: 'BUSINESS UNIT (Paris/ Supermarket)',
             sender: 'SENDER',
             brand: 'BRAND',
-            deparment: 'DEPARTMENT',
+            department: 'DEPARTMENT',
             category: 'CATEGORY',
             product: 'PRODUCT',
             season: 'SEASON',
@@ -2188,36 +2195,36 @@ export class ReportService {
             remarks: 'REMARKS',
         };
        
-      if (dataToExport.length > 0) {
-          /* make the worksheet */
-          const cleanData = [headers, ...dataToExport].filter(item => item !== null);
-          const ws = XLSX.utils.json_to_sheet([...cleanData], { skipHeader: true });
+    //   if (dataToExport.length > 0) {
+    //       /* make the worksheet */
+    //       const cleanData = [headers, ...dataToExport].filter(item => item !== null);
+    //       const ws = XLSX.utils.json_to_sheet([...cleanData], { skipHeader: true });
           
-          /* write workbook (use type 'binary') */
-          const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
-          const bufferFile = Buffer.from(csv, 'latin1');
-          const name = `Sustentabilidad_${uuidv4()}.csv`;
-          await this.s3.putObject(
-              {
-                  Bucket: this.AWS_S3_BUCKET_NAME,
-                  Body: bufferFile,
-                  Key: `reports/${name}`,
-                  ContentType: 'text/csv',
-              },
-              async (error: AWS.AWSError, data: AWS.S3.PutObjectOutput) => {
-                  try {
-                          const params = { Bucket: this.AWS_S3_BUCKET_NAME, Key: `reports/${name}`, Expires: 10800 }; // 3 HR
-                          const url = await this.s3.getSignedUrl('getObject', params);
-                          requestReport.status = 'Complete';
-                          requestReport.url = url;
-                          requestReport.name = name;
-                          await this.requestReporRepository.save(requestReport);
-                  } catch (error) {
-                      this.logger.error(`CATCH Error cargando el archivo de reporte: ${error}`);    
-                  }
-              },
-          );
-        }  
+    //       /* write workbook (use type 'binary') */
+    //       const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
+    //       const bufferFile = Buffer.from(csv, 'latin1');
+    //       const name = `Sustentabilidad_${uuidv4()}.csv`;
+    //       await this.s3.putObject(
+    //           {
+    //               Bucket: this.AWS_S3_BUCKET_NAME,
+    //               Body: bufferFile,
+    //               Key: `reports/${name}`,
+    //               ContentType: 'text/csv',
+    //           },
+    //           async (error: AWS.AWSError, data: AWS.S3.PutObjectOutput) => {
+    //               try {
+    //                       const params = { Bucket: this.AWS_S3_BUCKET_NAME, Key: `reports/${name}`, Expires: 10800 }; // 3 HR
+    //                       const url = await this.s3.getSignedUrl('getObject', params);
+    //                       requestReport.status = 'Complete';
+    //                       requestReport.url = url;
+    //                       requestReport.name = name;
+    //                       await this.requestReporRepository.save(requestReport);
+    //               } catch (error) {
+    //                   this.logger.error(`CATCH Error cargando el archivo de reporte: ${error}`);    
+    //               }
+    //           },
+    //       );
+    //     }  
         
       } catch (error) {
           console.log(error);
