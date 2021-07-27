@@ -1705,7 +1705,7 @@ export class ReportService {
                 informacionDestacada: 'INFORMACION DESTACADA O ADICIONAL',
                 productoSustentable: 'PRODUCTO SUSTENTABLE',
                 caracteristicaSustentable: 'CARACTERISTICA SUSTENTABLE',
-                fibraSustentable: 'FIBRA SUSTENTABLE',
+                certificacion: 'CERTIFICACION',
                 size: 'SIZE CHILE',
                 waterproof: 'WATERPROOF',
                 capellada: 'CAPELLADA',
@@ -1728,8 +1728,7 @@ export class ReportService {
             const dataToExport = [];
             for (const style of stylesData) {
                 const purchaseStyle = purchaseStyles.find(p => p.styleId === style.styleId);
-                const firsDeliveryDate = _.flatten(purchaseStyle.colors.map(color => color.shippings))
-                    .map(s => s.date).sort((a, b) => a.getTime() - b.getTime())[0];
+                const firstShipping = _.sortBy(_.flatten(purchaseStyle.colors.map(color => color.shippings)), 'date') as PurchaseStyleColorShipping[];
 
                 const styleCode = style.code ? style.code : '';
                 const brand = style.brand ? style.brand : '';
@@ -1737,18 +1736,19 @@ export class ReportService {
                 const design = style.attributes?.diseno ? style.attributes.diseno : '';
                 const material = style.attributes?.material ? style.attributes.material : '';
                 const tiroFitCorteManga = style.attributes?.tiroFitCorteManga ? style.attributes.tiroFitCorteManga : '';
+                const details = purchaseStyle.details[0];
 
                 const rowStyleData = {
                     division: style.division,
                     style: styleCode,
-                    entrance: firsDeliveryDate,
+                    entrance: firstShipping[0].shipping,
                     name: `${productType} ${design} ${tiroFitCorteManga} ${brand}`,
                     shortDescription: `${productType} ${material} ${design} ${styleCode} ${brand}`,
                     brand: brand,
                     product: productType,
                     tipoProducto: productType,
                     material: material,
-                    composicionMaterial: style.attributes?.composicionMaterial,
+                    composicionMaterial: details?.composition,
                     genero: style.attributes?.genero,
                     diseno: design,
                     garantia: style.attributes?.garantia,
@@ -1761,7 +1761,7 @@ export class ReportService {
                     largoPierna: style.attributes?.largoPierna,
                     largoManga: style.attributes?.largoManga,
                     largoTops: style.attributes?.largoTops,
-                    origen: purchaseStyle.details[0].origin.name,
+                    origen: details?.origin?.name,
                     cantidadDePiezas: style.attributes?.cantidadDePiezas,
                     incluye: style.attributes?.incluye,
                     descripcionTecnologica: style.attributes?.descripcionTecnologica,
@@ -1769,8 +1769,8 @@ export class ReportService {
                     consejosDeUso: style.attributes?.consejosDeUso,
                     informacionDestacada: style.attributes?.informacionDestacada,
                     productoSustentable: style.attributes?.productoSustentable,
-                    caracteristicaSustentable: style.attributes?.caracteristicaSustentable,
-                    fibraSustentable: style.attributes?.fibraSustentable,
+                    caracteristicaSustentable: details?.sustainableFeature?.name,
+                    certificacion: details?.certifications?.name,
                     waterproof: style.attributes?.waterproof,
                     capellada: style.attributes?.capellada,
                     forro: style.attributes?.forro,
