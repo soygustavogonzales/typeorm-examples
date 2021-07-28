@@ -1964,8 +1964,6 @@ export class ReportService {
         let query = this.purchaseStyleRepository.createQueryBuilder('purchaseStyle')
         .leftJoin('purchaseStyle.colors', 'colors')
         .leftJoin('colors.shippings', 'shippings')
-        // .leftJoinAndSelect('purchaseStyle.colors', 'colors')
-        // .leftJoinAndSelect('colors.shippings', 'shippings')
         .leftJoin('purchaseStyle.details', 'purchaseDetails')
         .leftJoin('purchaseDetails.category', 'category')
         .leftJoin('purchaseDetails.origin', 'origin')
@@ -1989,11 +1987,19 @@ export class ReportService {
                 .addSelect('certifications.name', 'certifications')
                 .addSelect('colors', 'colors')
                 .addSelect('shippings', 'shippings')
-                // .addSelect('shippings.units', 'units')
             .where({ active: true })
             .andWhere('purchaseStyle.deleteDate IS NULL')
             .andWhere('colors.state = true')
             .andWhere(`purchaseStatus.id IN (${Status.Approvement})`);
+
+        if (dto.seasons && dto.seasons.length > 0) {
+            query = query.andWhere(
+                new Brackets((qb) => {
+                    dto.seasons.forEach((seasonId) => {
+                        qb = qb.orWhere('purchase.seasonCommercial.id=' + seasonId);
+                    });
+                }));
+        }
 
         if (dto.departments && dto.departments.length > 0) {
             query = query.andWhere(
@@ -2060,6 +2066,56 @@ export class ReportService {
         // Create static data set
         const dataToExport = [];
         const groupedStyles = _.chain(purchaseStyles).groupBy('styleId').map((value, key) => ({ styleId: parseInt(key, 10), purchaseStyles: value })).value();   
+
+        if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
+            const requestReport = this.getNewRequestReport({ status: 'No Data', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement });
+            await this.requestReporRepository.save(requestReport);
+            return null;
+        }
+        const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement});
+
+        const headers = {
+            estado: 'ESTADO',
+            businessUnit: 'BUSINESS UNIT (Paris/ Supermarket)',
+            sender: 'SENDER',
+            brand: 'BRAND',
+            department: 'DEPARTMENT',
+            category: 'CATEGORY',
+            product: 'PRODUCT',
+            season: 'SEASON',
+            shipmentFlow: 'SHIPMENT FLOW',
+            vendorsCountry: 'VENDORS COUNTRY',
+            vendor: 'VENDOR',
+            vendorTaxId: 'VENDOR TAX ID',
+            status: 'STATUS',
+            sku: 'SKU',
+            style: 'STYLE',
+            fabric: 'FABRIC',
+            attributes: 'ATTRIBUTES',
+            percentageAttributes: '% ATTRIBUTE',
+            unitsProduced: 'UNITS PRODUCED',
+            weightPerPiece: 'WEIGHT PER PIECE (GRAMS)',
+            firstShipmentDate: 'FIRST SHIPMENT DATE',
+            stock: 'STOCK',
+            certificate: 'CERTIFICATE',
+            guaranteeLetter: 'GUARANTEE LETTER',
+            nCertification: 'N° CERTIFICATION',
+            statusOne: 'STOCK',
+            certificationScope: 'CERTIFICATION SCOPE',
+            statusTwo: 'STOCK',
+            validateDate: 'VALID DATE',
+            statusThree: 'STOCK',
+            consignee: 'CONSIGNEE',
+            statusFour: 'STOCK',
+            sewingFactory: 'SEWING FACTORY TAX ID',
+            sewingFactoryTaxId: 'SEWING FACTORY',
+            statusFive: 'STOCK',
+            fabricFactory: 'FABRICS FACTORY',
+            statusSix: 'STOCK',
+            yarnFactory: 'YARN FACTORY',
+            statusSeven: 'STOCK',
+            remarks: 'REMARKS',
+        };
      
         groupedStyles.forEach(item => {
             const style = stylesData.find(s => s.id === item.styleId);
@@ -2141,93 +2197,43 @@ export class ReportService {
                 } else {
                     dataToExport.push(rowStyleData);
                 }
-                console.log(dataToExport);
             }
         })
 
-        // if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
-        //     const requestReport = this.getNewRequestReport({ status: 'No Data', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement });
-        //     await this.requestReporRepository.save(requestReport);
-        //     return null;
-        // }
-        // const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement});
-
-        const headers = {
-            estado: 'ESTADO',
-            businessUnit: 'BUSINESS UNIT (Paris/ Supermarket)',
-            sender: 'SENDER',
-            brand: 'BRAND',
-            department: 'DEPARTMENT',
-            category: 'CATEGORY',
-            product: 'PRODUCT',
-            season: 'SEASON',
-            shipmentFlow: 'SHIPMENT FLOW',
-            vendorsCountry: 'VENDORS COUNTRY',
-            vendor: 'VENDOR',
-            vendorTaxId: 'VENDOR TAX ID',
-            status: 'STATUS',
-            sku: 'SKU',
-            style: 'STYLE',
-            fabric: 'FABRIC',
-            attributes: 'ATTRIBUTES',
-            percentageAttributes: '% ATTRIBUTE',
-            unitsProduced: 'UNITS PRODUCED',
-            weightPerPiece: 'WEIGHT PER PIECE (GRAMS)',
-            firstShipmentDate: 'FIRST SHIPMENT DATE',
-            stock: 'STOCK',
-            certificate: 'CERTIFICATE',
-            guaranteeLetter: 'GUARANTEE LETTER',
-            nCertification: 'N° CERTIFICATION',
-            statusOne: 'STOCK',
-            certificationScope: 'CERTIFICATION SCOPE',
-            statusTwo: 'STOCK',
-            validateDate: 'VALID DATE',
-            statusThree: 'STOCK',
-            consignee: 'CONSIGNEE',
-            statusFour: 'STOCK',
-            sewingFactory: 'SEWING FACTORY TAX ID',
-            sewingFactoryTaxId: 'SEWING FACTORY',
-            statusFive: 'STOCK',
-            fabricFactory: 'FABRICS FACTORY',
-            statusSix: 'STOCK',
-            yarnFactory: 'YARN FACTORY',
-            statusSeven: 'STOCK',
-            remarks: 'REMARKS',
-        };
        
-    //   if (dataToExport.length > 0) {
-    //       /* make the worksheet */
-    //       const cleanData = [headers, ...dataToExport].filter(item => item !== null);
-    //       const ws = XLSX.utils.json_to_sheet([...cleanData], { skipHeader: true });
-          
-    //       /* write workbook (use type 'binary') */
-    //       const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
-    //       const bufferFile = Buffer.from(csv, 'latin1');
-    //       const name = `Sustentabilidad_${uuidv4()}.csv`;
-    //       await this.s3.putObject(
-    //           {
-    //               Bucket: this.AWS_S3_BUCKET_NAME,
-    //               Body: bufferFile,
-    //               Key: `reports/${name}`,
-    //               ContentType: 'text/csv',
-    //           },
-    //           async (error: AWS.AWSError, data: AWS.S3.PutObjectOutput) => {
-    //               try {
-    //                       const params = { Bucket: this.AWS_S3_BUCKET_NAME, Key: `reports/${name}`, Expires: 10800 }; // 3 HR
-    //                       const url = await this.s3.getSignedUrl('getObject', params);
-    //                       requestReport.status = 'Complete';
-    //                       requestReport.url = url;
-    //                       requestReport.name = name;
-    //                       await this.requestReporRepository.save(requestReport);
-    //               } catch (error) {
-    //                   this.logger.error(`CATCH Error cargando el archivo de reporte: ${error}`);    
-    //               }
-    //           },
-    //       );
-    //     }  
+        if (dataToExport.length > 0) {
+            /* make the worksheet */
+            const cleanData = [headers, ...dataToExport].filter(item => item !== null);
+            const ws = XLSX.utils.json_to_sheet([...cleanData], { skipHeader: true });
+            
+            /* write workbook (use type 'binary') */
+            const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
+            const bufferFile = Buffer.from(csv, 'latin1');
+            const name = `Sustentabilidad_${uuidv4()}.csv`;
+            await this.s3.putObject(
+                {
+                    Bucket: this.AWS_S3_BUCKET_NAME,
+                    Body: bufferFile,
+                    Key: `reports/${name}`,
+                    ContentType: 'text/csv',
+                },
+                async (error: AWS.AWSError, data: AWS.S3.PutObjectOutput) => {
+                    try {
+                            const params = { Bucket: this.AWS_S3_BUCKET_NAME, Key: `reports/${name}`, Expires: 10800 }; // 3 HR
+                            const url = await this.s3.getSignedUrl('getObject', params);
+                            requestReport.status = 'Complete';
+                            requestReport.url = url;
+                            requestReport.name = name;
+                            await this.requestReporRepository.save(requestReport);
+                    } catch (error) {
+                        this.logger.error(`CATCH Error cargando el archivo de reporte: ${error}`);    
+                    }
+                },
+            );
+        }  
         
-      } catch (error) {
-          console.log(error);
-      }
+        } catch (error) {
+            console.log(error);
+        }
     }
 }
