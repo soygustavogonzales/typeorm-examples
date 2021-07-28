@@ -117,7 +117,13 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                             const designerUser = users?.find(u => u.id === parseInt(styleDetails.designer, null) ?? -1);
                             designer = designerUser ? `${designerUser.firstName} ${designerUser.lastName}` : styleDetails.designer;
                         }
-                        const firsDeliveryDate = color.shippings.map(s => s.date).sort((a, b) => a.getTime() - b.getTime())[0];
+                        const firsDeliveryDate = color.shippings.map(s => s.date)
+                        .filter(date=>{
+                            const nullyears = ['1970','1969'];
+                            const year = moment(date).year().toString();
+                            return nullyears.indexOf(year)==-1;
+                        })//Filtro los DATE que son NULL(Año 1969 o 1970)
+                        .sort((a, b) => a.getTime() - b.getTime())[0];
                         for (const shipping of color.shippings.filter(s => s.units > 0)) {
                             const shippingOcs = ocs.filter(o => o.piname === shipping.piName);
                             const cbm = parseFloat(styleData.cbm).toFixed(4);
