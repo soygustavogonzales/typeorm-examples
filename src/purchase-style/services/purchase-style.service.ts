@@ -65,6 +65,7 @@ import { Store } from '../../entities/store.entity';
 import { SustainableFeature } from '../../entities/sustainableFeature.entity';
 import { Certifications } from '../../entities/certifications.entity';
 import { Exhibition } from '../../entities/exhibition.entity';
+import { FilterSustainabilityDto } from '../../report/dtos/filterSustainability.dto';
 
 @Injectable()
 export class PurchaseStyleService {
