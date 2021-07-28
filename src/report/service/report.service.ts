@@ -2189,7 +2189,7 @@ export class ReportService {
                         const skuColorSize = color?.skuColorSize;
                         for (const size of skuColorSize) {
                             dataToExport.push({
-                                sku: size.sku.slice(0, -3),
+                                sku: size.sku,
                                 ...rowStyleData,
                             })
                         }
