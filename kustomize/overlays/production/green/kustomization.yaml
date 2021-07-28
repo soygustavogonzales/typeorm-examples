@@ -66,4 +66,4 @@ patchesJson6902:
     version: v1
 images:
 - name: registry.gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
-  newTag: master-246-4d12b852
+  newTag: master-255-1964e587
