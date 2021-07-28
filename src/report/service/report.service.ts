@@ -2214,18 +2214,19 @@ export class ReportService {
 
             /* make the worksheet */
             const cleanData = [headers, ...filterDataToExport].filter(item => item !== null);
-            const ws = XLSX.utils.json_to_sheet([...cleanData], { skipHeader: true });
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet([...cleanData], { skipHeader: true });
+            XLSX.utils.book_append_sheet(workbook, worksheet);
             
             /* write workbook (use type 'binary') */
-            const csv = XLSX.utils.sheet_to_csv(ws, { FS: ';', RS: '\r\n' });
-            const bufferFile = Buffer.from(csv, 'latin1');
-            const name = `Sustentabilidad_${uuidv4()}.csv`;
+            const bufferFile = XLSX.write(workbook, {type: 'buffer', bookType: "xlsx"});
+            const name = `Sustentabilidad_${uuidv4()}.xlsx`;
             await this.s3.putObject(
                 {
                     Bucket: this.AWS_S3_BUCKET_NAME,
                     Body: bufferFile,
                     Key: `reports/${name}`,
-                    ContentType: 'text/csv',
+                    ContentType: 'application/msexcel',
                 },
                 async (error: AWS.AWSError, data: AWS.S3.PutObjectOutput) => {
                     try {
