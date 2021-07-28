@@ -2189,7 +2189,7 @@ export class ReportService {
                         const skuColorSize = color?.skuColorSize;
                         for (const size of skuColorSize) {
                             dataToExport.push({
-                                sku: size.sku,
+                                sku: size.sku.slice(0, -3),
                                 ...rowStyleData,
                             })
                         }
@@ -2199,11 +2199,21 @@ export class ReportService {
                 }
             }
         })
-
        
         if (dataToExport.length > 0) {
+
+            const filterDataToExport = [];
+
+            const map = new Map();
+            for (const style of dataToExport) {
+                if (!map.has(style.style)){
+                    map.set(style.style, true);
+                    filterDataToExport.push({ ...style })
+                };
+            }
+
             /* make the worksheet */
-            const cleanData = [headers, ...dataToExport].filter(item => item !== null);
+            const cleanData = [headers, ...filterDataToExport].filter(item => item !== null);
             const ws = XLSX.utils.json_to_sheet([...cleanData], { skipHeader: true });
             
             /* write workbook (use type 'binary') */
