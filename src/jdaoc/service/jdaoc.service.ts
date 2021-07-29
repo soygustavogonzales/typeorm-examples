@@ -138,7 +138,7 @@ export class JdaOcService {
 
     async jdaOcByFilter(filter: JdaOcFilterDto): Promise<JdaOcDto[]> { 
         try {
-            let sqlQuery = `SELECT p.PONUMB, p.POVNUM, a.AANAME, p.POSTOR, p.PODPT, p.POEDAT, p.POCOST, p.PORETL, p.POUNTS, p.POMTYP
+            let sqlQuery = `SELECT p.PONUMB, p.POVNUM, a.AANAME, p.POSTOR, p.PODPT, p.POEDAT, p.POMTYP
                             FROM mmsp4lib.POMHDR p
                             LEFT JOIN exisbugd.APADDR a ON a.AANUM = p.POVNUM
                             WHERE p.POSTAT = '2' AND p.POMUS1 <> ''`;
@@ -167,25 +167,28 @@ export class JdaOcService {
             if (ocs.length === 0) { return []; } 
 
             const ocNumbers = _.uniq(ocs.map(o => o.PONUMB));
-            sqlQuery = `SELECT PONUMB, IFNULL(ROUND(((RETAIL_I-(COSTO_I * 1.19))/RETAIL_I) * 100),ROUND(((RETAIL_II-(COSTO_II * 1.19))/RETAIL_II) * 100))
-                        AS MARGEN, IFNULL (RETAIL_I,retail_II) AS VTA_RTL, IFNULL (COSTO_I ,COSTO_II) AS COSTO
-                        FROM (SELECT PONUMB,
-                            (SELECT SUM ((CASE 
-                                WHEN ZEVRTO = 0 THEN ZEVRTR 
-                                ELSE ZEVRTO END ) * D.POMQTY) AS PRECIO   FROM MMSP4LIB.POMZEV Z 
-                                INNER JOIN  MMSP4LIB.POMDTL D ON  Z.ZEVNPO = D.PONUMB AND Z.ZEVSKU = D.INUMBR WHERE Z.ZEVNPO = H.PONUMB ) AS RETAIL_I,
-                            (SELECT SUM ((D.POBCST - D.POBALW) * D.POMQTY) AS COSTO   FROM  MMSP4LIB.POMDTL D  WHERE D.PONUMB = H.PONUMB ) AS COSTO_I, 
-                            (SELECT SUM ((CASE 
-                            WHEN ZEVRTO = 0 THEN ZEVRTR 
-                            ELSE ZEVRTO END ) * C.PCSQTY) AS PRECIO   FROM MMSP4LIB.POMZEV Z 
-                            INNER JOIN  MMSP4LIB.POMCSD C ON  Z.ZEVNPO = C.PONUMB AND Z.ZEVSTY = C.PCSSTY  AND C.PCSTYP = 2 WHERE Z.ZEVNPO = H.PONUMB ) AS RETAIL_II,
-                            (SELECT SUM ((C.PCSBCS - C.PCSBAW) * C.PCSQTY) AS COSTO   FROM  MMSP4LIB.POMCSD C  WHERE C.PONUMB = H.PONUMB AND C.PCSTYP = 2) AS COSTO_II
+            sqlQuery = `SELECT PONUMB, IFNULL(ROUND(((RETAIL_I-(COSTO_I * 1.19))/RETAIL_I) * 100), ROUND(((RETAIL_II-(COSTO_II * 1.19))/RETAIL_II) * 100))
+                        AS MARGEN,IFNULL(RETAIL_I, retail_II) AS VTA_RTL, IFNULL (COSTO_I, COSTO_II) AS COSTO, IFNULL(uni1, uni2) AS UNIDADES_OC
+                        FROM
+                        (SELECT PONUMB,
+                            (SELECT SUM ((CASE WHEN ZEVRTO = 0 THEN ZEVRTR ELSE ZEVRTO END) * D.POMQTY) AS PRECIO
+                            FROM MMSP4LIB.POMZEV Z 
+                            INNER JOIN MMSP4LIB.POMDTL D ON Z.ZEVNPO = D.PONUMB AND Z.ZEVSKU = D.INUMBR
+                            WHERE Z.ZEVNPO = H.PONUMB) AS RETAIL_I,
+                            (SELECT SUM ((D.POBCST - D.POBALW) * D.POMQTY) AS COSTO FROM MMSP4LIB.POMDTL D WHERE D.PONUMB = H.PONUMB ) AS COSTO_I, 
+                            (SELECT SUM ((CASE WHEN ZEVRTO = 0 THEN ZEVRTR ELSE ZEVRTO END) * C.PCSQTY) AS PRECIO
+                            FROM MMSP4LIB.POMZEV Z 
+                            INNER JOIN  MMSP4LIB.POMCSD C ON Z.ZEVNPO = C.PONUMB AND Z.ZEVSTY = C.PCSSTY  AND C.PCSTYP = 2
+                            WHERE Z.ZEVNPO = H.PONUMB) AS RETAIL_II,
+                            (SELECT SUM ((C.PCSBCS - C.PCSBAW) * C.PCSQTY) AS COSTO FROM MMSP4LIB.POMCSD C WHERE C.PONUMB = H.PONUMB AND C.PCSTYP = 2) AS COSTO_II, h.POUNTS AS cant,
+                            (SELECT SUM (D.POMQTY) AS cant1 FROM  MMSP4LIB.POMDTL D WHERE D.PONUMB = H.PONUMB) AS uni1,
+                            (SELECT SUM (C.PCSQTY) AS cant1 FROM  MMSP4LIB.POMCSD C WHERE c.PONUMB = H.PONUMB AND C.PCSTYP = 2) AS uni2       
                         FROM MMSP4LIB.POMHDR H
                         WHERE H.POSTAT = '2' AND H.POMUS1 <> '' AND H.PONUMB IN (${ocNumbers.join(',')}))`;
 
-            const rates = {};
+            const details = {};
             const ocRates = await this.pool.query(sqlQuery);
-            ocRates.forEach(item => { rates[item.PONUMB] = item.MARGEN; });
+            ocRates.forEach(item => { details[item.PONUMB] = item; });
 
             const departments = {};
             const departmentJdaCodes = _.uniq(ocs.map(o => o.PODPT));
@@ -195,6 +198,8 @@ export class JdaOcService {
             return ocs.map(oc => {
                 let distributionType = '';
                 const limit = departments[oc.PODPT]?.limit || 0;
+                const totalCost = details[oc.PONUMB]?.COSTO || 0;
+
                 if (oc.POMTYP && oc.POMTYP === 'S') {
                     distributionType = 'STOCK';
                 } else if (oc.POMTYP && oc.POMTYP === 'P') {
@@ -207,12 +212,12 @@ export class JdaOcService {
                     destinationWinery: oc.POSTOR,
                     department: departments[oc.PODPT]?.name || '',
                     creationDate: moment(oc.POEDAT, 'YYMMDD').toDate(),
-                    totalCost: oc.POCOST,
-                    totalRetail: oc.PORETL,
-                    totalUnits: oc.POUNTS,
-                    conversionRate: rates[oc.PONUMB] || 0,
+                    totalCost,
+                    totalRetail: details[oc.PONUMB]?.VTA_RTL || 0,
+                    totalUnits: details[oc.PONUMB]?.UNIDADES_OC || 0,
+                    conversionRate: details[oc.PONUMB]?.MARGEN || 0,
                     distributionType,
-                    status: limit === 0 ? 'PL' : oc.POCOST > limit ? 'HP' : 'PL'
+                    status: limit === 0 ? 'PL' : totalCost > limit ? 'HP' : 'PL'
                 }
             });
         } catch (error) {
