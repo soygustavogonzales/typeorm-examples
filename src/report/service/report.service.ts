@@ -1975,7 +1975,8 @@ export class ReportService {
         .leftJoin('purchase.seasonCommercial', 'seasonCommercial')
         .leftJoin('purchase.status', 'purchaseStatus')
         .leftJoin('purchaseStyle.status', 'styleStatus')
-            .select('purchaseStyle.id', 'id')
+        .select('purchaseStyle.id', 'id')
+                .addSelect('purchase.approvalDate', 'approvalDate')
                 .addSelect('store.name', 'store')
                 .addSelect('purchaseStyle.styleId', 'styleId')
                 .addSelect('purchaseDetails.merchandiser', 'merchandiser')
@@ -2075,6 +2076,7 @@ export class ReportService {
         const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.ProductEnhancement});
 
         const headers = {
+            approvalDate: 'APPROVAL DATE',
             estado: 'ESTADO',
             businessUnit: 'BUSINESS UNIT (Paris/ Supermarket)',
             sender: 'SENDER',
@@ -2141,6 +2143,7 @@ export class ReportService {
 
             if (style && purchaseStyleDetail) {
                 const rowStyleData = {
+                    approvalDate: moment(purchaseStyleDetail.approvalDate).format('DD-MMM-yyyy'), 
                     estado: '', //campo vacio
                     businessUnit: purchaseStyleDetail.store,
                     sender: merchandiser,
