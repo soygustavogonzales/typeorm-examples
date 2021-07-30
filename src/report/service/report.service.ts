@@ -1573,6 +1573,9 @@ export class ReportService {
                     if (style.store.shortName === 'TP') {
                         channel = 4;
                     }
+                    if (localCode == 200 && style.arrivalDate >= new Date(2022, 1, 10)) {
+                        localCode = 100;
+                    }
                     if (skuColor) {
                         return skuColor.skuColorSize.map(skuColorSize => {
                             if (skuColorSize) {
