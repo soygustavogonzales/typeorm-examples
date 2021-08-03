@@ -287,15 +287,20 @@ export class JdaskuService {
                     .leftJoinAndSelect('detail.ratio', 'ratio')
                     .leftJoinAndSelect('detail.packingMethod', 'packingMethod')
                     .leftJoinAndSelect('purchase.status', 'status')
+                    .leftJoin('colors.shippings', 'shippings')
                     .where(mainWhere)
                     .andWhere('style.active=:active', { active: true })
                     .andWhere('colors.state = true')
                     .andWhere('colors.approved = true')
+                    .andWhere('shippings.units > 0')
                     .andWhere(dto.brand + '=ANY(purchase.brands)')
                     .andWhere(dto.department + '=ANY(purchase.departments)')
                     .andWhere('style.styleId IN (:...styleIds)', { styleIds: dto.styles })
                     .getMany();
             if (purchaseEntity.length === 0) { return createdSku; }
+
+            const colors = _.uniqBy(_.flatten(_.flatten(_.flatten(purchaseEntity.map(p => p.stores.map(s => s.styles.map(s => s.colors)))))), 'id');
+            const styleColorIds = _.uniq(colors.map(c => c.styleColorId));
 
             const stylesData: StyleDto[] = await this.externalStyleService.getStylesDataByIds(dto.styles);
             stylesData.map((styleInfo: StyleDto) => {
@@ -325,7 +330,7 @@ export class JdaskuService {
                     provider: style.details.provider,
                 };
 
-                const skuColors = style.colors.map(async colors => {
+                const skuColors = style.colors.filter(c => styleColorIds.includes(c.id)).map(async colors => {
                     const skuColor: SkuColor = {
                         sku,
                         styleColorId: colors.id,
