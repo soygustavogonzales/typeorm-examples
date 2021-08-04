@@ -64,7 +64,7 @@ export class JdaskusyncService {
                                         INNER JOIN MMSP4LIB.INSSIZ siz ON siz.SSTYLN = I.ISTYLÑ AND siz.SSSIZE = T2.SIZCOD
                                         LEFT JOIN MMSP4LIB.INSVEN alt ON alt.SSTYLÑ = i.ISTYLÑ 
                                         WHERE I.IVNDPÑ LIKE ? AND NOT REGEXP_LIKE(I.IVNDPÑ,?,'i')
-                                        AND (I.ASNUM = ? OR alt.SVVNUM = ?) AND i.IDSCCD = 'A'`, [`${sku.code}%`, `${sku.code}+?[[a-zA-Z0-9]]`, sku.provider.codeJda, sku.provider.codeJda]);
+                                        AND (I.ASNUM = ? OR alt.SVVNUM = ?) AND i.IDSCCD = 'A'`, [`${sku.code}%`, `${sku.code}+?[.a-zA-Z0-9]`, sku.provider.codeJda, sku.provider.codeJda]);
             if (jda.length === 0) {
                 const jdamember = await this.pool.query(`SELECT * FROM mmsp4lib.MSTXCM WHERE XCMNAR = ? AND XCMNPP = ?`, [sku.skuJdaMbr.jdaMember, sku.code]);
                 if (jdamember.length === 0) {
