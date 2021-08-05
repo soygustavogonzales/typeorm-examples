@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationPublisherService } from '../../external-services/events/notification-publisher.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Sku } from '../../entities/sku.entity';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { SkuColorSize } from '../../entities/skuColorSize.entity';
 import { SkuColor } from '../../entities/skuColor.entity';
 import { NotificationTypeEnum } from '../../shared/enums/notificationType.enum';
@@ -52,6 +52,10 @@ export class JdaskusyncService {
             .where('skuColorSize.sku IS NULL')
             .getMany();
 
+        if (pendingSku.length === 0) { return response; }
+
+        let mbrsToDelete = []
+        let codesToDelete = []
         await Promise.all(pendingSku.map(async sku => {
             const jda = await this.pool.query(`SELECT I.IDEPT,I.ASNUM,I.IVNDPÑ AS IVNDPN,I.INUMBR,I2.IUPC,T.COLSHT,T.COLCOD,T2.SIZSHT,
                                             CASE WHEN TRIM(I3.SVATCD) = 'Y' THEN 'ATC' || TRIM(I.ISTYLÑ) || LPAD(T.COLCOD,4,'0') ELSE NULL END AS ATC,
@@ -69,8 +73,13 @@ export class JdaskusyncService {
                 const jdamember = await this.pool.query(`SELECT * FROM mmsp4lib.MSTXCM WHERE XCMNAR = ? AND XCMNPP = ?`, [sku.skuJdaMbr.jdaMember, sku.code]);
                 if (jdamember.length === 0) {
                     response.mbrStatusError.push(sku.skuJdaMbr.jdaMember);
+                    mbrsToDelete.push(sku.skuJdaMbr?.id || 0)
                 } else {
-                    response.skuStatusError.push(jdamember.filter(skujda => skujda['XCMSTS'] === 'E')); // Errors
+                    const stylesErrors = jdamember.filter(skujda => skujda['XCMSTS'] === 'E'); // Errors
+                    if (stylesErrors.length > 0) {
+                        response.skuStatusError.push(...stylesErrors); 
+                        codesToDelete.push(...stylesErrors.map(e => e['XCMNPP'] || ''))
+                    }
                 }
             } else {
                 // Verificamos que se hayan creado todos los colores
@@ -96,7 +105,6 @@ export class JdaskusyncService {
                 }
             }
         }));
-        response.skuStatusError = _.flatten(response.skuStatusError.filter(x => x.length > 0));
 
         // Get all usersId to notify
         let description = '';
@@ -141,6 +149,16 @@ export class JdaskusyncService {
                 };
                 await this.notificationPublisherService.publishMessageToTopic(JSON.stringify(notification));
             }
+        }
+
+        // Delete SKUs with errors
+        mbrsToDelete = _.uniq(mbrsToDelete.filter(m => m > 0));
+        codesToDelete = _.uniq(codesToDelete.filter(c => c != ''));
+
+        const skusToDelete = await this.skuRepository.find({ where: { skuJdaMbr:{ id: In(mbrsToDelete) }}, select: ['id']});
+        skusToDelete.push(...await this.skuRepository.find({ where: { code: In(codesToDelete) }, select: ['id']}));
+        if (skusToDelete.length > 0) {
+            await this.skuRepository.remove(skusToDelete);
         }
 
         return response;
