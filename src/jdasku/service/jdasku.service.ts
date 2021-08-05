@@ -20,6 +20,7 @@ import { NotificationTypeEnum } from '../../shared/enums/notificationType.enum';
 import { CleanSkuRuleCause } from '../../shared/enums/cleanSkuRuleCause.enum';
 import { StoreProxyService } from '../../external-services/store-proxy/store-proxy/store-proxy.service';
 import { SkuSummaryGroup } from '../dtos/skuSummaryGroup.dto';
+import { StyleDetails } from '../dtos/styleDetails.dto';
 @Injectable()
 export class JdaskuService {
 
@@ -112,7 +113,7 @@ export class JdaskuService {
         const dataIds: number[] = _.flattenDepth(purchases.map(s => s.stores.map(st => st.styles.map(sty => sty.styleId))), 3);
         const ids = Array.from(new Set(dataIds));
         const stylesData: StyleDto[] = await this.externalStyleService.getStylesDataByIds(ids);
-        
+
         let groupedStyles = [];
         purchases.forEach(purchase => {
             groupedStyles.push(stylesData.map(style => {
@@ -129,35 +130,35 @@ export class JdaskuService {
         groupedStyles = _.uniqBy(_.flattenDepth(groupedStyles, 1), x => `${x.seasonId}-${x.department}-${x.brand}`);
 
         await Promise.all(purchases.map(async purchase => {
-            const styleProvider: 
-            Array<{ style: number, provider: number }> 
-            = await this.purchaseRepository
-                .createQueryBuilder('purchase')
-                .select(['styles.styleId AS style', 'details.provider AS provider'])
-                .leftJoin('purchase.stores', 'stores')
-                .leftJoin('stores.store', 'store')
-                .leftJoin('stores.styles', 'styles')
-                .leftJoin('styles.details', 'details')
-                .where({ id: purchase.id })
-                .groupBy('styles.styleId')
-                .addGroupBy('details.provider')
-                .getRawMany();
+            const styleProvider:
+                Array<{ style: number, provider: number }>
+                = await this.purchaseRepository
+                    .createQueryBuilder('purchase')
+                    .select(['styles.styleId AS style', 'details.provider AS provider'])
+                    .leftJoin('purchase.stores', 'stores')
+                    .leftJoin('stores.store', 'store')
+                    .leftJoin('stores.styles', 'styles')
+                    .leftJoin('styles.details', 'details')
+                    .where({ id: purchase.id })
+                    .groupBy('styles.styleId')
+                    .addGroupBy('details.provider')
+                    .getRawMany();
             purchase.totalStyles = styleProvider.length;
 
             for await (const style of styleProvider) {
                 const styleData = stylesData.find(sty => sty.id === style.style);
                 if (styleData) {
-                    const groupData = groupedStyles.findIndex(group => group.brand === styleData.brandId && 
-                                                              group.department === styleData.departmentId && 
-                                                              group.seasonId === purchase.seasonCommercial.id);
+                    const groupData = groupedStyles.findIndex(group => group.brand === styleData.brandId &&
+                        group.department === styleData.departmentId &&
+                        group.seasonId === purchase.seasonCommercial.id);
                     groupedStyles[groupData].styles.push(styleData.id);
 
                     const sku = await this.skuRepository
-                    .createQueryBuilder('sku')
-                    .leftJoinAndSelect('sku.skuColor', 'skuColor')
-                    .leftJoinAndSelect('skuColor.skuColorSize', 'skuColorSize')
-                    .where({ styleId: style.style, provider: style.provider })
-                    .getOne();
+                        .createQueryBuilder('sku')
+                        .leftJoinAndSelect('sku.skuColor', 'skuColor')
+                        .leftJoinAndSelect('skuColor.skuColorSize', 'skuColorSize')
+                        .where({ styleId: style.style, provider: style.provider })
+                        .getOne();
                     if (sku) {
                         const colors = sku.skuColor.length; // Total de colores
                         const colorsOk: number[] = sku.skuColor.map(color => {
@@ -192,31 +193,31 @@ export class JdaskuService {
                 seasonCommercial: Equal(dto.seasonId)
             };
             const purchaseEntity = await this.purchaseRepository
-                    .createQueryBuilder('purchase')
-                    .leftJoinAndSelect('purchase.seasonCommercial', 'seasonCommercial')
-                    .leftJoinAndSelect('purchase.stores', 'stores', 'stores.deleteDate is null')
-                    .leftJoinAndSelect('stores.store', 'store')
-                    .leftJoinAndSelect('store.destinyCountry', 'destinyCountry')
-                    .leftJoinAndSelect('stores.styles', 'style', 'style.deleteDate is null')
-                    .leftJoinAndSelect('style.colors', 'colors', 'colors.deleteDate is null')
-                    .leftJoinAndSelect('style.details', 'detail', 'detail.deleteDate is null')
-                    .leftJoinAndSelect('detail.provider', 'provider')
-                    .leftJoinAndSelect('provider.originCountry', 'originCountry')
-                    .leftJoinAndSelect('detail.size', 'size')
-                    .leftJoinAndSelect('detail.exhibition', 'exhibition')
-                    .leftJoinAndSelect('detail.ratio', 'ratio')
-                    .leftJoinAndSelect('detail.packingMethod', 'packingMethod')
-                    .leftJoinAndSelect('purchase.status', 'status')
-                    .leftJoin('colors.shippings', 'shippings')
-                    .where(mainWhere)
-                    .andWhere('style.active=:active', { active: true })
-                    .andWhere('colors.state = true')
-                    .andWhere('colors.approved = true')
-                    .andWhere('shippings.units > 0')
-                    .andWhere(dto.brand + '=ANY(purchase.brands)')
-                    .andWhere(dto.department + '=ANY(purchase.departments)')
-                    .andWhere('style.styleId IN (:...styleIds)', { styleIds: dto.styles })
-                    .getMany();
+                .createQueryBuilder('purchase')
+                .leftJoinAndSelect('purchase.seasonCommercial', 'seasonCommercial')
+                .leftJoinAndSelect('purchase.stores', 'stores', 'stores.deleteDate is null')
+                .leftJoinAndSelect('stores.store', 'store')
+                .leftJoinAndSelect('store.destinyCountry', 'destinyCountry')
+                .leftJoinAndSelect('stores.styles', 'style', 'style.deleteDate is null')
+                .leftJoinAndSelect('style.colors', 'colors', 'colors.deleteDate is null')
+                .leftJoinAndSelect('style.details', 'detail', 'detail.deleteDate is null')
+                .leftJoinAndSelect('detail.provider', 'provider')
+                .leftJoinAndSelect('provider.originCountry', 'originCountry')
+                .leftJoinAndSelect('detail.size', 'size')
+                .leftJoinAndSelect('detail.exhibition', 'exhibition')
+                .leftJoinAndSelect('detail.ratio', 'ratio')
+                .leftJoinAndSelect('detail.packingMethod', 'packingMethod')
+                .leftJoinAndSelect('purchase.status', 'status')
+                .leftJoin('colors.shippings', 'shippings')
+                .where(mainWhere)
+                .andWhere('style.active=:active', { active: true })
+                .andWhere('colors.state = true')
+                .andWhere('colors.approved = true')
+                .andWhere('shippings.units > 0')
+                .andWhere(dto.brand + '=ANY(purchase.brands)')
+                .andWhere(dto.department + '=ANY(purchase.departments)')
+                .andWhere('style.styleId IN (:...styleIds)', { styleIds: dto.styles })
+                .getMany();
             if (purchaseEntity.length === 0) { return createdSku; }
 
             const colors = _.uniqBy(_.flatten(_.flatten(_.flatten(purchaseEntity.map(p => p.stores.map(s => s.styles.map(s => s.colors)))))), 'id');
@@ -240,7 +241,10 @@ export class JdaskuService {
                         });
                     });
                 });
-                styleInfo.details.atc = atcValue;
+                if (!styleInfo.details) {
+                    styleInfo.details = new StyleDetails();
+                    styleInfo.details.atc = atcValue;
+                }
             });
 
             const saveData = stylesData.map(async style => {
@@ -280,7 +284,7 @@ export class JdaskuService {
                     });
 
                     skuColor.skuColorSize = (await Promise.all(skuColorSize)).filter(size => size);
-                    if (!style.details.atc){
+                    if (!style.details.atc) {
                         const sizeJda = await this.sizeJda.findOne({ where: { jdaCode: 'M003' } });
                         skuColor.skuColorSize.push({
                             skuColor,
@@ -313,7 +317,7 @@ export class JdaskuService {
                         await this.skuRepository.save(style);
                     }
                 }
-                
+
                 await this.pool.update(`CALL QSYS.QCMDEXC('ADDPFM FILE(MMSP4LIB/WORKFILE) MBR(${skuJdaMbr.jdaMember})', 0000000046.00000)`);
                 await this.pool.update(`CALL QSYS.QCMDEXC('OVRDBF FILE(ECOCOMPR) TOFILE(MMSP4LIB/WORKFILE) MBR(${skuJdaMbr.jdaMember}) OVRSCOPE(*JOB)', 0000000078.00000)`);
                 const insert = await this.pool.update(`INSERT INTO MMSP4LIB.ECOCOMPR VALUES('${dataJda.join('\'),(\'')}')`);
@@ -375,15 +379,15 @@ export class JdaskuService {
     async cleanSkus(stylesId: number[], ruleCause: CleanSkuRuleCause, user: any) {
         this.logger.debug(`Cleaning skus for cause ${ruleCause}, styles: ${stylesId}`, 'cleanSkus: start');
         const skusStyles = await this.skuRepository.find({ where: { styleId: In(stylesId) }, relations: ['skuColor', 'skuColor.skuColorSize'] });
-        
+
         let querySku = this.skuColorSizeRepository.createQueryBuilder('skuColorSize')
-        .innerJoinAndSelect('skuColorSize.skuColor', 'skuColor')
-        .innerJoinAndSelect('skuColor.sku', 'sku')
-        .innerJoinAndSelect('skuColorSize.sizeJda', 'sizeJda')
-        .where('sku.styleId IN (:...styleIds)', { styleIds: stylesId });
+            .innerJoinAndSelect('skuColorSize.skuColor', 'skuColor')
+            .innerJoinAndSelect('skuColor.sku', 'sku')
+            .innerJoinAndSelect('skuColorSize.sizeJda', 'sizeJda')
+            .where('sku.styleId IN (:...styleIds)', { styleIds: stylesId });
         const skuColorSizes = await querySku.getMany();
         const skus = skuColorSizes.map(s => s.sku);
-        
+
         if (ruleCause === CleanSkuRuleCause.SizeDetailChange ||
             ruleCause === CleanSkuRuleCause.StyleCodeChange ||
             ruleCause === CleanSkuRuleCause.ProviderDetailChange ||
@@ -411,7 +415,7 @@ export class JdaskuService {
 
     }
 
-    async getSkuByStyle(styleIds: number[]){
+    async getSkuByStyle(styleIds: number[]) {
         return await this.skuRepository.createQueryBuilder('sku')
             .leftJoinAndSelect('sku.skuColor', 'skuColor')
             .leftJoinAndSelect('skuColor.skuColorSize', 'skuColorSize')
