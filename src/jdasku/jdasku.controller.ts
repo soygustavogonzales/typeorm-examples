@@ -10,6 +10,7 @@ import { ResponseApi } from './dtos/responseApi.entity';
 import { UserDecode } from '../shared/dtos/userDecode.entity';
 import { SkuSummaryGroup } from './dtos/skuSummaryGroup.dto';
 import { CleanSkuDto } from './dtos/cleanSku.dto';
+import { Any } from 'typeorm';
 
 @Controller('jdasku')
 @ApiTags('JdaSku')
@@ -62,6 +63,19 @@ export class JdaskuController {
         return { status: 200, data: true };
     }
 
+    @Post('delete-skus')
+    @ApiBody({type:Any})
+    @ApiOkResponse({
+        description:'Servicio para eliminar SKUs',
+    })
+    async deleteMany(@Body() req:any):Promise<ResponseApi<boolean>>{
+        console.log('styleIds>>',req)
+        const amountSkusDeleted = await this.jdaskuService.deleteSkusByStyleIds(req);
+        console.log('rpta>>',amountSkusDeleted)
+        return {status:200, data:true, message:amountSkusDeleted};
+    }
+ 
+
     @Post('jdasync')
     @ApiOkResponse({
         description: 'Servicio para sincronizar SKU generados en JDA',
@@ -69,4 +83,5 @@ export class JdaskuController {
     async jdasync(): Promise<any> {
         return await this.jdaskusyncService.jdasync();
     }
+
 }
