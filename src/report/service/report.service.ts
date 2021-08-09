@@ -2105,20 +2105,20 @@ export class ReportService {
             certificate: 'CERTIFICATE',
             guaranteeLetter: 'GUARANTEE LETTER',
             nCertification: 'N° CERTIFICATION',
-            statusOne: 'STOCK',
+            statusOne: 'STATUS N° CERTIFICATION',
             certificationScope: 'CERTIFICATION SCOPE',
-            statusTwo: 'STOCK',
+            statusTwo: 'STATUS CERTIFICATION SCOPE',
             validateDate: 'VALID DATE',
-            statusThree: 'STOCK',
+            statusThree: 'STATUS VALID DATE',
             consignee: 'CONSIGNEE',
-            statusFour: 'STOCK',
+            statusFour: 'STATUS CONSIGNEE',
             sewingFactory: 'SEWING FACTORY TAX ID',
             sewingFactoryTaxId: 'SEWING FACTORY',
-            statusFive: 'STOCK',
+            statusFive: 'STATUS SEWING FACTORY',
             fabricFactory: 'FABRICS FACTORY',
-            statusSix: 'STOCK',
+            statusSix: 'STATUS FABRICS FACTORY',
             yarnFactory: 'YARN FACTORY',
-            statusSeven: 'STOCK',
+            statusSeven: 'STATUS YARN FACTORY',
             remarks: 'REMARKS',
         };
      
@@ -2127,9 +2127,13 @@ export class ReportService {
             const purchaseStyleDetail = _.first(item.purchaseStyles);
             
             // total units
-            const units = item.purchaseStyles.map(s => s.shippings_units).reduce((acum, currentValue) => {
-                return acum + currentValue;
-            })
+            let units = 0;
+            const unitsFilter = item.purchaseStyles.map(s => s.shippings_units).filter(u => u > 0);
+            if(unitsFilter.length > 0) {
+                units = unitsFilter.reduce((acum, currentValue) => {
+                    return acum + currentValue;
+                })
+            }
 
             // shipmentFlow
             const stylesShipments = item.purchaseStyles.filter(u => u.shippings_units > 0 && u.shippings_units !== null);
@@ -2144,7 +2148,7 @@ export class ReportService {
                 merchandiser = productManagerUser ? `${productManagerUser.firstName} ${productManagerUser.lastName}` : purchaseStyleDetail.merchandiser;
             }
 
-            if (style && purchaseStyleDetail) {
+            if (style && purchaseStyleDetail && units > 0) {
                 const rowStyleData = {
                     approvalDate: moment(purchaseStyleDetail.approvalDate).format('DD-MMM-yyyy'), 
                     estado: '', //campo vacio
