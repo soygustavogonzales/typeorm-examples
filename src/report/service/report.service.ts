@@ -1972,6 +1972,7 @@ export class ReportService {
         .leftJoin('purchaseDetails.origin', 'origin')
         .leftJoin('purchaseDetails.provider', 'provider')
         .leftJoin('purchaseDetails.certifications', 'certifications')
+        .leftJoin('purchaseDetails.rse', 'rse')
         .leftJoin('purchaseStyle.purchaseStore', 'purchaseStore')
         .leftJoin('purchaseStore.store', 'store')
         .leftJoin('purchaseStore.purchase', 'purchase')
@@ -2028,6 +2029,24 @@ export class ReportService {
                 new Brackets((qb) => {
                     dto.categories.forEach((categoryId) => {
                         qb = qb.orWhere('category.id=' + categoryId);
+                    });
+                }));
+        }
+
+        if (dto.rses && dto.rses.length > 0) {
+            query = query.andWhere(
+                new Brackets((qb) => {
+                    dto.rses.forEach((rseId) => {
+                        qb = qb.orWhere(`rse.id=${rseId}`);
+                    });
+                }));
+        }
+
+        if (dto.merchants && dto.merchants.length > 0) {
+            query = query.andWhere(
+                new Brackets((qb) => {
+                    dto.merchants.forEach((merchandiserId) => {
+                        qb = qb.orWhere(`purchaseDetails.merchandiser='${merchandiserId}'`);
                     });
                 }));
         }
