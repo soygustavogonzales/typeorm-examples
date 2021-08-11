@@ -44,7 +44,7 @@ export class OcJda {
 
     @Column({ nullable: true })
     providerId: number;
-    @ManyToOne(() => Provider, parent => parent.id, {nullable: true, eager: true})
+    @ManyToOne(() => Provider, parent => parent.id, {nullable: true})
     provider: Provider;
 
     @Column({ nullable: true })
