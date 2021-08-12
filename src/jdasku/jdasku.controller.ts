@@ -64,11 +64,11 @@ export class JdaskuController {
     }
 
     @Post('delete-skus')
-    @ApiBody({type:Any})
+    @ApiBody({type:Array})
     @ApiOkResponse({
         description:'Servicio para eliminar SKUs',
     })
-    async deleteMany(@Body() req:any):Promise<ResponseApi<boolean>>{
+    async deleteMany(@Body() req:number[]):Promise<ResponseApi<boolean>>{
         const amountSkusDeleted = await this.jdaskuService.deleteSkusByStyleIds(req);
         return {status:200, data:true, message:amountSkusDeleted};
     }
