@@ -101,7 +101,7 @@ export class JdaOcService {
             await this.pool.update(`CALL QSYS.QCMDEXC('ADDPFM FILE(MMSP4LIB/WORKFILE1) MBR(${ocJdaMbr.jdaMember})', 0000000047.00000)`);
             await this.pool.update(`CALL QSYS.QCMDEXC('OVRDBF FILE(WORKFILE1) TOFILE(MMSP4LIB/WORKFILE1) MBR(${ocJdaMbr.jdaMember}) OVRSCOPE(*JOB)', 0000000080.00000)`);
             const response = await this.pool.update(`INSERT INTO MMSP4LIB.WORKFILE1 VALUES('${ocNumbers.join('\'),(\'')}')`);
-            await this.pgmOcRelease({ Member: ocJdaMbr.jdaMember }, 10);
+            await this.pgmOcRelease({ Member: ocJdaMbr.jdaMember }, 20);
 
             return response;
         } catch (error) {
