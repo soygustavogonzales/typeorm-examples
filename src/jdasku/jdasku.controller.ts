@@ -69,9 +69,7 @@ export class JdaskuController {
         description:'Servicio para eliminar SKUs',
     })
     async deleteMany(@Body() req:any):Promise<ResponseApi<boolean>>{
-        console.log('styleIds>>',req)
         const amountSkusDeleted = await this.jdaskuService.deleteSkusByStyleIds(req);
-        console.log('rpta>>',amountSkusDeleted)
         return {status:200, data:true, message:amountSkusDeleted};
     }
  

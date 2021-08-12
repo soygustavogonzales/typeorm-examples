@@ -415,13 +415,10 @@ export class JdaskuService {
 
     }
     async deleteSkusByStyleIds(stylesId: number[]):Promise<number>{
-        console.log('stylesId >>',stylesId)
         this.logger.debug(`Cleaning skus for styles: ${stylesId}`, 'cleanSkus: start');
         const skusStyles = await this.skuRepository.find({ where: { styleId: In(stylesId) }});
-        console.log('skusStyles.length>>',skusStyles.length);
         if(skusStyles.length>0){ 
             const skuRemoves = await this.skuRepository.remove(skusStyles);
-            console.log(skuRemoves);
             return skuRemoves.length;
         }else{
             return 0;
