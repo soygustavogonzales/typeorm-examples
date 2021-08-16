@@ -414,6 +414,17 @@ export class JdaskuService {
         }
 
     }
+    async deleteSkusByStyleIds(stylesId: number[]):Promise<number>{
+        this.logger.debug(`Cleaning skus for styles: ${stylesId}`, 'cleanSkus: start');
+        const skusStyles = await this.skuRepository.find({ where: { styleId: In(stylesId) }});
+        if(skusStyles.length>0){ 
+            const skuRemoves = await this.skuRepository.remove(skusStyles);
+            return skuRemoves.length;
+        }else{
+            return 0;
+        } 
+    };
+
 
     async getSkuByStyle(styleIds: number[]) {
         return await this.skuRepository.createQueryBuilder('sku')
