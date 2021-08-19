@@ -153,11 +153,7 @@ export class JdaOcService {
                 }
             }
             if (filter.departments && filter.departments.length > 0) {
-                const departments = await this.styleService.getDepartmentDataByIds(filter.departments);
-                const departmentNumbers = departments.map(d => d.codeChile);
-                if (departmentNumbers.length > 0) {
-                    sqlQuery += ` AND p.PODPT IN (${departmentNumbers.join(',')})`;
-                }
+                sqlQuery += ` AND p.PODPT IN (${filter.departments.join(',')})`;
             }
             if (filter.range && filter.range.start && filter.range.end && filter.range.start < filter.range.end) {
                 sqlQuery += ` AND p.POEDAT BETWEEN ${moment(filter.range.start).format("YYMMDD")} AND ${moment(filter.range.end).format("YYMMDD")}`;
@@ -210,6 +206,7 @@ export class JdaOcService {
                     ocNumber: oc.PONUMB,
                     provider: oc.AANAME,
                     destinationWinery: oc.POSTOR,
+                    departmentCode: oc.PODPT,
                     department: departments[oc.PODPT]?.name || '',
                     creationDate: moment(oc.POEDAT, 'YYMMDD').toDate(),
                     totalCost,
