@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Param, UseGuards, Body } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiSecurity, ApiTags } from '@nestjs/swagger';
-import { ResponseApi } from '../jdasku/dtos/responseApi.entity';
+import { ResponseApi } from '../shared/dtos/responseApi.dto';
 import { ComposeGuard } from '../shared/guards/auth.guard';
 import { GetUser } from '../shared/jwt/get-user.decorator';
 import { JdaOcDto } from './dtos/jdaoc.dto';

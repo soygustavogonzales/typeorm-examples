@@ -2,7 +2,7 @@ import { Controller, Logger, Get, Query, BadRequestException, Post, UsePipes, Va
 import { ApiTags, ApiOkResponse, ApiBody, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
 import { ImportFactorService } from './service/import-factor.service';
 import { FilterImportDto } from './dtos/filterImportFactor.dto';
-import { ResponseApi } from '../../purchase/dtos/responseApi.entity';
+import { ResponseApi } from '../../shared/dtos/responseApi.dto';
 import { ImportFactor } from '../../entities/importFactor.entity';
 import { ImportFactorDto } from './dtos/importFactor.dto';
 import { ComposeGuard } from '../../shared/guards/auth.guard';

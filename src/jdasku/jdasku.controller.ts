@@ -6,7 +6,7 @@ import { Body } from '@nestjs/common/decorators/http/route-params.decorator';
 import { GetUser } from '../shared/jwt/get-user.decorator';
 import { ComposeGuard } from '../shared/guards/auth.guard';
 import { JdaskusyncService } from './service/jdaskusync.service';
-import { ResponseApi } from './dtos/responseApi.entity';
+import { ResponseApi } from '../shared/dtos/responseApi.dto';
 import { UserDecode } from '../shared/dtos/userDecode.entity';
 import { SkuSummaryGroup } from './dtos/skuSummaryGroup.dto';
 import { CleanSkuDto } from './dtos/cleanSku.dto';

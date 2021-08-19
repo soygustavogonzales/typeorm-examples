@@ -42,4 +42,4 @@ patchesJson6902:
     version: v1
 images:
 - name: registry.gitlab.com/cencosud-ds/ordenes-y-entrega/planning/ecom-sync-svc
-  newTag: PTECH-8037-300-3950962b
+  newTag: PTECH-7903-358-80b5c1d5

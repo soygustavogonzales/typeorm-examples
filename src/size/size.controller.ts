@@ -3,7 +3,7 @@ import { ApiTags, ApiOkResponse, ApiQuery, ApiBody, ApiBearerAuth, ApiSecurity }
 import { SizeService } from './service/size.service';
 import { UpdateOrCreateSizeDto } from './dto/updateOrCreateSize.dto';
 import { Size } from '../entities/size.entity';
-import { ResponseApi } from '../purchase/dtos/responseApi.entity';
+import { ResponseApi } from '../shared/dtos/responseApi.dto';
 import { SizeOrderBy } from './dto/sizeOrderBy.enum';
 import { FindSizeDto } from './dto/findSize.dto';
 import { ComposeGuard } from '../shared/guards/auth.guard';

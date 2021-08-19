@@ -5,7 +5,7 @@ import { FilterStyleModDto } from './dtos/filterStyleMod.dto';
 import { ComposeGuard } from '../shared/guards/auth.guard';
 import { FilterStylesToNegotiationDto } from './dtos/filterStylesToNegotiation.dto';
 import { CreateNegotiationDto } from './dtos/createNegotiation.dto';
-import { ResponseApi } from '../purchase/dtos/responseApi.entity';
+import { ResponseApi } from '../shared/dtos/responseApi.dto';
 import { FilterPurchaseToExportNegotiationDto } from './dtos/filterPurchaseToExportNegotiation.dto';
 import { GetUser } from '../shared/jwt/get-user.decorator';
 import { UserDecode } from '../shared/dtos/userDecode.entity';

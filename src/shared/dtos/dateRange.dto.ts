@@ -21,4 +21,9 @@ export class DateRangeDto {
   @IsDate()
   @Type(() => Date)
   end: Date;
+
+  constructor(start: Date, end: Date){
+    this.start = start;
+    this.end = end;
+  }
 }
