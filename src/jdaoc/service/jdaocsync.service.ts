@@ -5,6 +5,7 @@ import { OcJda } from '../../entities/ocJda.entity';
 import { IsNull, Repository } from 'typeorm';
 import { Purchase } from '../../entities/purchase.entity';
 import * as _ from 'lodash';
+import { StoreProxyService } from '../../external-services/store-proxy/store-proxy/store-proxy.service';
 
 @Injectable()
 export class JdaOcSyncService {
@@ -17,6 +18,7 @@ export class JdaOcSyncService {
         private readonly purchaseRepository: Repository<Purchase>,
         @InjectRepository(OcJda)
         private readonly ocJdaRepository: Repository<OcJda>,
+        private externalStoreService: StoreProxyService,
         private notificationPublisherService: NotificationPublisherService) { this.connect(); }
 
     async connect() {
@@ -36,13 +38,19 @@ export class JdaOcSyncService {
         const pendingOc = await this.purchaseRepository
             .createQueryBuilder('purchase')
             .leftJoin('purchase.stores', 'stores')
+            .leftJoin('stores.store', 'store')
             .leftJoin('stores.styles', 'styles')
             .leftJoin('styles.colors', 'colors')
             .leftJoin('styles.details', 'details')
             .leftJoin('details.provider', 'provider')
             .leftJoin('colors.shippings', 'shippings')
-            .leftJoinAndMapMany('shippings.oc', OcJda, 'oc', 'shippings.piName = oc.piname')
+            .leftJoin('OcJda', 'oc', 'shippings.piName = oc.piname')
+            .leftJoin('Sku', 'sku', 'styles.styleId = sku.styleId AND  details.provider = sku.provider')
+            .leftJoin('sku.skuColor', 'skuColor', 'skuColor.styleColorId = colors.styleColorId')
+            .leftJoin('skuColor.skuColorSize', 'skuColorSize')
             .select(['shippings.piName AS pi', 'provider.id AS providerid, provider.codeJda AS providerJda'])
+            .addSelect('skuColorSize.sku', 'sku')
+            .addSelect('store.impnumpfx', 'impnumpfx')
             .where('purchase.status >= 8')
             .andWhere('styles.active=:active', { active: true })
             .andWhere('colors.state = true')
@@ -54,10 +62,13 @@ export class JdaOcSyncService {
             .groupBy('shippings.piName')
             .addGroupBy('provider.id')
             .addGroupBy('provider.codeJda')
+            .addGroupBy('store.impnumpfx')
+            .addGroupBy('skuColorSize.sku')
             .getRawMany();
 
         const piInfo = [];
-        let queryList = pendingOc.map(pi => `(PONOT1 LIKE '%${pi.pi}%' AND POVNUM = ${pi.providerjda} AND POSTAT = '3')`);
+        const pendingOcUniqByPiAndProvider = _.uniqBy(pendingOc, oc => `${oc.pi}-${oc.providerjda}`);
+        let queryList = pendingOcUniqByPiAndProvider.map(pi => `(PONOT1 LIKE '%${pi.pi}%' AND POVNUM = ${pi.providerjda} AND POSTAT = '3')`);
         let i = 0;
         let oc = [];
         while (i < queryList.length) {
@@ -67,12 +78,13 @@ export class JdaOcSyncService {
                             WHERE ${list.join(' OR ')}`;
             const ocList = await this.pool.query(sqlQuery);
             ocList.forEach(o => oc.push(o));
-            i+=1000;
+            i += 1000;
         }
+        const ocsToCreateForImports = [];
 
         for await (const o of oc) {
-            const findPi = pendingOc.find(pi => o.PONOT1.search(pi.pi) >= 0);
-            if(findPi) {
+            const findPi = pendingOcUniqByPiAndProvider.find(pi => o.PONOT1.search(pi.pi) >= 0);
+            if (findPi) {
                 piInfo.push({
                     piname: findPi.pi,
                     provider: findPi.providerid,
@@ -84,14 +96,26 @@ export class JdaOcSyncService {
                     podpt: o.PODPT,
                     poedat: o.POEDAT
                 });
+                const piSkus = pendingOc.filter(oc => oc.pi == findPi.pi && oc.sku !== null);
+                ocsToCreateForImports.push(...piSkus.map(pi => ({ sku: pi.sku, piName: pi.pi, impNumber: `${pi.impnumpfx}${o.POEDAT.substring(0, 4)}${o.PONUMB}` })))
             }
+        }
+        // this.logger.debug(ocsToCreateForImports);
+        try {
+            if (ocsToCreateForImports.length > 0) {
+                this.externalStoreService.registerOcToImport(ocsToCreateForImports);
+            }
+        } catch (error) {
+            this.logger.error(error);
         }
 
         createdOc = await Promise.all(piInfo.map(async p => {
-            const oc = await this.ocJdaRepository.findOne({ where: [
-                { piname: p.piname, ponumb: p.ponumb },
-                { piname: IsNull(), ponumb: p.ponumb }
-            ] });
+            const oc = await this.ocJdaRepository.findOne({
+                where: [
+                    { piname: p.piname, ponumb: p.ponumb },
+                    { piname: IsNull(), ponumb: p.ponumb }
+                ]
+            });
             if (oc) {
                 oc.piname = p.piname;
                 oc.providerId = p.provider
@@ -152,7 +176,7 @@ export class JdaOcSyncService {
 
         for await (const o of oc) {
             const findPi = pendingOc.find(pi => o.PONOT1.search(pi.pi) >= 0);
-            if(findPi) {
+            if (findPi) {
                 piInfo.push({
                     piname: findPi.pi,
                     provider: findPi.providerid,

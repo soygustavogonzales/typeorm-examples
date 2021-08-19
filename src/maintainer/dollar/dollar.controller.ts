@@ -2,7 +2,7 @@ import { Controller, Logger, Get, Query, BadRequestException, Post, UsePipes, Va
 import { ApiTags, ApiOkResponse, ApiParam, ApiQuery, ApiBody, ApiBearerAuth, ApiSecurity } from '@nestjs/swagger';
 import { DollarService } from './service/dollar.service';
 import { FilterDollarDto } from './dtos/filterDollar.dto';
-import { ResponseApi } from '../../purchase/dtos/responseApi.entity';
+import { ResponseApi } from '../../shared/dtos/responseApi.dto';
 import { DollarChange } from '../../entities/dollarChange.entity';
 import { DollarChangeDto } from './dtos/dollarChange.dto';
 import { ComposeGuard } from '../../shared/guards/auth.guard';
