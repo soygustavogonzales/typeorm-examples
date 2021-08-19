@@ -547,6 +547,7 @@ export class PurchaseStyleService {
                 .leftJoin('store.destinyCountry', 'destinyCountry')
                 .leftJoin('purchase.status', 'status')
                 .leftJoin('purchase.seasonCommercial', 'seasonCommercial')
+                .leftJoin('purchase.name', 'name')
                 .leftJoin('details.category', 'category')
                 .leftJoin('details.seasonSticker', 'seasonSticker')
                 .leftJoin('details.shippingMethod', 'shippingMethod')
