@@ -35,6 +35,7 @@ import { ExitportsModule } from './exitports/exitports.module';
 import { ReportModule } from './report/report.module';
 import { PaymentTermsModule } from './payment-terms/payment-terms.module';
 import { NewReportModule } from './report/new-report.module';
+import { ComexModule } from './comex/comex.module';
 
 @Module({
   imports: [
@@ -96,6 +97,7 @@ import { NewReportModule } from './report/new-report.module';
     PaymentTermsModule,
     JdaOcModule,
     NewReportModule,
+    ComexModule,
   ],
   controllers: [HealthController],
   providers: [JwtStrategy, ApiKeyStrategy, JdaskusyncService, JdaSkuSyncConsumerService],

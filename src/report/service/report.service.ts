@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PurchaseStyleService } from '../../purchase-style/services/purchase-style.service';
 import * as _ from 'lodash';
 import { ConfigService } from 'nestjs-config';

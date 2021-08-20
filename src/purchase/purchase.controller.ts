@@ -7,7 +7,7 @@ import { CreatePurchaseStyleDto } from './dtos/createPurchaseStyle.dto';
 import { PurchaseDto } from './dtos/purchase.dto';
 import { AssociateStylesResponseDto } from './dtos/associateStylesResponse.dto';
 import { UpdatePurchaseColorDto } from './dtos/updatePurchaseColor.dto';
-import { ResponseApi } from './dtos/responseApi.entity';
+import { ResponseApi } from '../shared/dtos/responseApi.dto';
 import { GetShippingUnitsPurchaseColor } from './dtos/getShippingUnitsPurchaseColor.dto';
 import { ColorShippingUnits } from './dtos/colorShippingUnits.dto';
 import { SaveStyleDetailDto } from './dtos/saveStyleDetails.dto';

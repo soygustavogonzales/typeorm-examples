@@ -22,7 +22,20 @@ export class StoreProxyService {
       };
       const result = await this.httpService.patch(url, body, { headers: { 'api-key': this.apiKey } }).toPromise();
       if (result.status === 200) {
-          return result.data;
+        return result.data;
+      }
+    } catch (error) {
+      this.logger.error(error);
+      return error;
+    }
+  }
+
+  async registerOcToImport(data: { sku, impNumber, piName }[]) {
+    try {
+      const url = `${this.api}/comex`;
+      const result = await this.httpService.post(url, data, { headers: { 'api-key': this.apiKey } }).toPromise();
+      if (result.status === 200) {
+        return result.data;
       }
     } catch (error) {
       this.logger.error(error);

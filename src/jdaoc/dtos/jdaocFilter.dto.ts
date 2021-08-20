@@ -4,7 +4,7 @@ import { DateRangeDto } from '../../shared/dtos/dateRange.dto';
 
 export class JdaOcFilterDto {
   @ApiProperty({
-    description: 'Ids de departamentos',
+    description: 'Codes de departamentos',
     example: [],
     isArray: true,
   })
