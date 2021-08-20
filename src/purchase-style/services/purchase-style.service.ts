@@ -547,7 +547,6 @@ export class PurchaseStyleService {
                 .leftJoin('store.destinyCountry', 'destinyCountry')
                 .leftJoin('purchase.status', 'status')
                 .leftJoin('purchase.seasonCommercial', 'seasonCommercial')
-                .leftJoin('purchase.name', 'name')
                 .leftJoin('details.category', 'category')
                 .leftJoin('details.seasonSticker', 'seasonSticker')
                 .leftJoin('details.shippingMethod', 'shippingMethod')
@@ -564,7 +563,7 @@ export class PurchaseStyleService {
                 .leftJoin('colors.shippings', 'shippings')
                 .where({ active: true })
                 .andWhere('colors.state = true');
-
+            console.log(query.getQueryAndParameters());
             if (!includeUnits0) {
                 query = query.andWhere('shippings.units<>0');
             }
@@ -593,6 +592,14 @@ export class PurchaseStyleService {
                     new Brackets((qb) => {
                         filter.seasons.forEach((seasonId) => {
                             qb = qb.orWhere('purchase.seasonCommercial.id=' + seasonId);
+                        });
+                    }));
+            }
+            if (filter.purchaseNamesIds && filter.purchaseNamesIds.length > 0) {
+                query = query.andWhere(
+                    new Brackets((qb) => {
+                        filter.purchaseNamesIds.forEach((purchaseNameId) => {
+                            qb = qb.orWhere('purchase.id=' + purchaseNameId);
                         });
                     }));
             }

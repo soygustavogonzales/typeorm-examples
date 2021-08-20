@@ -175,7 +175,7 @@ export class PurchaseBuyingReportSku extends PurchaseBuyingReport {
                                         hanger: styleDetails.hanger ? 'YES' : 'NO',
                                         vstTag: styleDetails.vstTag ? 'YES' : 'NO',
                                         unitsPerInner: unitsPerInner,
-                                        name:detailsData.purchaseName,
+                                        name:purchaseStyle.purchaseStore.purchase.name,
                                         innerPerMaster: styleData.divisionMaster, // calculate by ratio,
                                         cbm: Number(cbm),
                                         totalCbm: styleData.cbm * totalQty,

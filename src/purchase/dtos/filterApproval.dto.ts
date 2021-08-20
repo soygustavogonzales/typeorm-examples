@@ -8,6 +8,13 @@ export class FilterApprovalDto {
   subscriptionId: string;
 
   @ApiProperty({
+    description: 'Ids de Nombres de Compras',
+    example: [],
+    isArray: true,
+  })
+  purchaseNamesIds: number[];
+
+  @ApiProperty({
     description: 'Ids de temporadas comerciales',
     example: [],
     isArray: true,

@@ -240,7 +240,7 @@ export class ReportService {
         const requestReport = this.getNewRequestReport({ status: 'Pending', url: '', name: '', subscriptionId, userId, reportType: ReportType.Approvement });
         await this.requestReporRepository.save(requestReport);
         const { purchaseStyles, stylesData, users, ocs, detailsData } = await this.purchaseStyleService.getPurchaseStylesByFilterV1(dto, StatusPurchaseColorEnum.ConfirmedOrCanceled, true);
-
+        console.log(purchaseStyles)
         if (!stylesData || (purchaseStyles.length > 0 && stylesData.length === 0)) {
             requestReport.status = 'No Data';
             requestReport.url = '';

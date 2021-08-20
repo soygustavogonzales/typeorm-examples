@@ -169,7 +169,7 @@ export class PurchaseBuyingReportEstilo extends PurchaseBuyingReport {
                                 vstTag: styleDetails.vstTag ? 'YES' : 'NO',
                                 atc: styleDetails.atc ? 'YES' : 'NO',
                                 unitsPerInner: detailsData.ratios[styleDetails.ratioId]?.ratio ? detailsData.ratios[styleDetails.ratioId]?.ratio.split('-').map(x => parseInt(x, null)).reduce((a, b) => a + b) : 0,
-                                name:detailsData.purchaseName,
+                                name:purchaseStyle.purchaseStore.purchase.name,
                                 innerPerMaster: styleData.divisionMaster,
                                 cbm: Number(cbm),
                                 totalCbm: styleData.cbm * shipping.units,

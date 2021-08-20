@@ -23,6 +23,7 @@ export class NewReportController {
     })
     @ApiBody({ type: FilterApprovalDto })
     getReportApproved(@Body() dto: FilterApprovalDto, @GetUser() user: UserDecode): any {
+        
         this.reportService.generateApprovedReport(dto, user?.id || 0);
         return {status: 200, data: true};
     }
